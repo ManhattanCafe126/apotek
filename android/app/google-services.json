@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "672892715660",
+    "project_id": "flutter-ocr-1716d",
+    "storage_bucket": "flutter-ocr-1716d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:672892715660:android:4bd7ae5eef89d93974f1a9",
+        "android_client_info": {
+          "package_name": "com.example.apotek_ocr"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBFiD1-Ob4oLYLcsS41jvGwBRP1JrH53Hc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:672892715660:android:dce607dd1905751174f1a9",
+        "android_client_info": {
+          "package_name": "com.ezoburgh.ocr"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBFiD1-Ob4oLYLcsS41jvGwBRP1JrH53Hc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
