@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:simple_barcode_scanner/simple_barcode_scanner.dart';
-import 'openai_service.dart'; //
+import 'openai_service.dart';
+import 'models/obat_ocr_model.dart';
 
 class RisetMLKitPage extends StatefulWidget {
   const RisetMLKitPage({super.key});
@@ -18,6 +20,8 @@ class _RisetMLKitPageState extends State<RisetMLKitPage> {
   bool _isScanning = false;
   bool _isAnalyzingAI = false;
 
+  List<ObatOCR> _listObat = []; // 🔥 HASIL AI
+
   late TextRecognizer _textRecognizer;
 
   @override
@@ -30,39 +34,6 @@ class _RisetMLKitPageState extends State<RisetMLKitPage> {
   void dispose() {
     _textRecognizer.close();
     super.dispose();
-  }
-
-  // ================= BARCODE =================
-  Future<void> _scanBarcodeNormal() async {
-    setState(() => _isScanning = true);
-
-    try {
-      String? res = await SimpleBarcodeScanner.scanBarcode(
-        context,
-        barcodeAppBar: const BarcodeAppBar(
-          appBarTitle: 'Scan Barcode Obat',
-          centerTitle: true,
-          enableBackButton: true,
-          backButtonIcon: Icon(Icons.arrow_back_ios),
-        ),
-        isShowFlashIcon: true,
-        delayMillis: 1000,
-        cameraFace: CameraFace.back,
-      );
-
-      if (res != null && res != '-1' && res.isNotEmpty) {
-        setState(() {
-          _hasilScan = "📦 Hasil Barcode:\n$res";
-          _imageFile = null;
-        });
-      } else {
-        setState(() => _hasilScan = "Scan dibatalkan.");
-      }
-    } catch (e) {
-      setState(() => _hasilScan = "Gagal scan barcode: $e");
-    } finally {
-      setState(() => _isScanning = false);
-    }
   }
 
   // ================= OCR =================
@@ -89,47 +60,68 @@ class _RisetMLKitPageState extends State<RisetMLKitPage> {
 
       final teksMentah = recognizedText.text;
 
-      String hasilAwal =
-          "📝 Teks Terdeteksi:\n$teksMentah\n\n--- ANALISIS DASAR ---";
-
-      if (teksMentah.toUpperCase().contains("EXP") ||
-          teksMentah.toUpperCase().contains("ED") ||
-          RegExp(r'\d{2}/\d{2}/\d{2,4}').hasMatch(teksMentah)) {
-        hasilAwal += "\n[v] Indikasi tanggal kedaluwarsa ditemukan";
-      }
-
-      setState(() => _hasilScan = hasilAwal);
+      setState(() {
+        _hasilScan = "📝 OCR selesai. Mengirim ke AI...";
+      });
 
       if (teksMentah.trim().isNotEmpty) {
-        _analisisDenganOpenAI(teksMentah);
+        await _analisisDenganAI(teksMentah);
       }
     } catch (e) {
-      setState(() => _hasilScan = "Gagal memproses OCR: $e");
+      setState(() => _hasilScan = "Gagal OCR: $e");
     } finally {
       setState(() => _isScanning = false);
     }
   }
 
-  // ================= OPENAI =================
-  Future<void> _analisisDenganOpenAI(String inputTeks) async {
-    setState(() {
-      _isAnalyzingAI = true;
-      _hasilScan += "\n\n🤖 Menganalisis dengan AI (OpenAI)...";
-    });
+  // ================= OPENAI FILTER =================
+  Future<void> _analisisDenganAI(String inputTeks) async {
+    setState(() => _isAnalyzingAI = true);
 
     try {
-      final hasilAI =
-      await OpenAIService.analisisTeksOCR_OpenAI(inputTeks);
+      final hasil =
+      await OpenAIService.ekstrakObatDariOCR(inputTeks);
+
+      final List data = jsonDecode(hasil);
 
       setState(() {
-        _hasilScan += "\n\n--- HASIL ANALISIS AI ---\n$hasilAI";
+        _listObat =
+            data.map((e) => ObatOCR.fromJson(e)).take(5).toList();
       });
     } catch (e) {
-      setState(() {
-        _hasilScan += "\n\n❌ Error analisis AI: $e";
-      });
+      setState(() => _hasilScan = "❌ Gagal parsing AI");
     } finally {
       setState(() => _isAnalyzingAI = false);
+    }
+  }
+
+  // ================= SCAN BARCODE PER ITEM =================
+  Future<void> _scanBarcodePerItem(int index) async {
+    try {
+      String? res = await SimpleBarcodeScanner.scanBarcode(
+        context,
+        barcodeAppBar: const BarcodeAppBar(
+          appBarTitle: 'Scan Barcode Obat',
+          centerTitle: true,
+        ),
+        isShowFlashIcon: true,
+        delayMillis: 800,
+        cameraFace: CameraFace.back,
+      );
+
+      if (res != null && res != '-1' && res.isNotEmpty) {
+        setState(() {
+          _listObat[index].barcode = res;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Barcode berhasil disimpan")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Gagal scan barcode: $e")),
+      );
     }
   }
 
@@ -138,70 +130,84 @@ class _RisetMLKitPageState extends State<RisetMLKitPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Scan Barcode & OCR"),
+        title: const Text("Scan Faktur Obat"),
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Preview Gambar OCR
+            // Preview
             Container(
-              height: 250,
+              height: 220,
               width: double.infinity,
               color: Colors.grey[200],
               child: _imageFile == null
-                  ? const Center(
-                child: Text(
-                  "Preview Kamera (OCR)",
-                  style: TextStyle(color: Colors.grey),
-                ),
-              )
+                  ? const Center(child: Text("Preview OCR"))
                   : Image.file(_imageFile!, fit: BoxFit.contain),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  onPressed:
-                  (_isScanning || _isAnalyzingAI) ? null : _scanBarcodeNormal,
-                  icon: const Icon(Icons.qr_code),
-                  label: const Text("Scan Barcode"),
-                ),
-                ElevatedButton.icon(
-                  onPressed:
-                  (_isScanning || _isAnalyzingAI) ? null : _ambilGambarOCR,
-                  icon: const Icon(Icons.text_fields),
-                  label: const Text("Scan OCR"),
-                ),
-              ],
+            ElevatedButton.icon(
+              onPressed: _ambilGambarOCR,
+              icon: const Icon(Icons.camera_alt),
+              label: const Text("Scan Faktur (OCR)"),
             ),
 
             if (_isAnalyzingAI)
               const Padding(
-                padding: EdgeInsets.all(16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(width: 10),
-                    Text("AI sedang menganalisis..."),
-                  ],
-                ),
+                padding: EdgeInsets.all(12),
+                child: CircularProgressIndicator(),
               ),
 
-            const Divider(thickness: 2),
+            const Divider(),
 
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                _hasilScan,
-                style: const TextStyle(fontSize: 14, height: 1.5),
-              ),
+            // ================= LIST OBAT =================
+            const Text(
+              "Hasil Deteksi Obat",
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
+
+            ..._listObat.asMap().entries.map((entry) {
+              int index = entry.key;
+              ObatOCR obat = entry.value;
+
+              return Card(
+                margin: const EdgeInsets.all(8),
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(obat.nama,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold)),
+
+                      Text("Batch: ${obat.batch}"),
+                      Text("Expired: ${obat.expired}"),
+
+                      const SizedBox(height: 6),
+
+                      Text(
+                        obat.barcode == null
+                            ? "Belum ada barcode"
+                            : "Barcode: ${obat.barcode}",
+                        style: const TextStyle(color: Colors.blue),
+                      ),
+
+                      const SizedBox(height: 6),
+
+                      ElevatedButton.icon(
+                        onPressed: () => _scanBarcodePerItem(index),
+                        icon: const Icon(Icons.qr_code),
+                        label: const Text("Scan Barcode"),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
           ],
         ),
       ),

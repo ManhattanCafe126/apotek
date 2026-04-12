@@ -120,4 +120,49 @@ FORMAT JSON WAJIB:
     /// ⚠️ Output HARUS berupa JSON string dari AI
     return json['choices'][0]['message']['content'];
   }
+  static Future<String> ekstrakObatDariOCR(String teksOCR) async {
+    final prompt = '''
+  Ekstrak maksimal 5 data obat dari teks berikut.
+
+  Ambil hanya:
+  - nama obat
+  - batch
+  - expired
+
+  Format HARUS JSON array:
+  [
+    {
+      "nama": "...",
+      "batch": "...",
+      "expired": "..."
+    }
+  ]
+
+  Teks:
+  $teksOCR
+  ''';
+
+    final response = await http.post(
+      Uri.parse(baseUrl),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $apiKey',
+      },
+      body: jsonEncode({
+        "model": "gpt-4o-mini",
+        "messages": [
+          {"role": "system", "content": "Ekstrak data obat dari OCR."},
+          {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.1
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      return "[]";
+    }
+
+    final json = jsonDecode(response.body);
+    return json['choices'][0]['message']['content'];
+  }
 }
