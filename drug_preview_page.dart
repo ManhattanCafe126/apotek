@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'models/drug_model.dart';
 import 'tambah_obat_page.dart';
 
@@ -51,7 +50,9 @@ class _DrugListPageState extends State<DrugListPage> {
     debugPrint('📝 Drug name: ${_remainingDrugs[index].nama}');
 
     if (index >= _remainingDrugs.length) {
-      debugPrint('❌ Index $index melebihi list length ${_remainingDrugs.length}');
+      debugPrint(
+        '❌ Index $index melebihi list length ${_remainingDrugs.length}',
+      );
       return;
     }
 
@@ -112,7 +113,9 @@ class _DrugListPageState extends State<DrugListPage> {
 
   // Dialog untuk menampilkan obat berikutnya
   void _showNextDrugDialog() {
-    debugPrint('📢 Showing next drug dialog. Remaining: ${_remainingDrugs.length}');
+    debugPrint(
+      '📢 Showing next drug dialog. Remaining: ${_remainingDrugs.length}',
+    );
 
     if (_remainingDrugs.isEmpty) {
       debugPrint('❌ _remainingDrugs kosong, tidak tampilkan dialog');
@@ -144,9 +147,17 @@ class _DrugListPageState extends State<DrugListPage> {
             onPressed: () {
               debugPrint('▶️ User pilih Lanjut');
               Navigator.pop(context);
-              _openDrugForm(0); // Buka form untuk obat pertama di list (yang sekarang obat #2 original)
+              _openDrugForm(
+                0,
+              ); // Buka form untuk obat pertama di list (yang sekarang obat #2 original)
             },
-            child: const Text('Lanjut', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Lanjut',
+              style: TextStyle(
+                color: Colors.green,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -191,10 +202,7 @@ class _DrugListPageState extends State<DrugListPage> {
                 const SizedBox(height: 8),
                 Text(
                   'Tersimpan: $_savedCount/${widget.drugs.length} | Tap obat lain untuk lihat/ubah tanggal kadaluarsa',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -253,15 +261,19 @@ class _DrugListPageState extends State<DrugListPage> {
                                 drug.nama.isEmpty
                                     ? '(Nama tidak terdeteksi)'
                                     : drug.nama,
-                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const SizedBox(height: 4),
                                   if (drug.batch.isNotEmpty)
-                                    Text('Batch: ${drug.batch}',
-                                        style: const TextStyle(fontSize: 12)),
+                                    Text(
+                                      'Batch: ${drug.batch}',
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
                                   if (drug.expDate.isNotEmpty)
                                     Text(
                                       'Exp: ${drug.expDate}',
@@ -274,10 +286,7 @@ class _DrugListPageState extends State<DrugListPage> {
                                       Icons.arrow_forward,
                                       color: Colors.green,
                                     )
-                                  : const Icon(
-                                      Icons.edit,
-                                      color: Colors.blue,
-                                    ),
+                                  : const Icon(Icons.edit, color: Colors.blue),
                               onTap: () {
                                 if (isFirst) {
                                   // Obat pertama langsung buka form

@@ -7,7 +7,7 @@ class GrafikCompareService {
       int tahunAktif,
       int tahunLalu,
       ) {
-    return _db.collection('rekomendasi').snapshots().map((snapshot) {
+    return _db.collection('penjualan').snapshots().asyncMap((snapshot) async {
       final List<int> dataAktif = List.filled(12, 0);
       final List<int> dataLalu = List.filled(12, 0);
 
@@ -18,10 +18,10 @@ class GrafikCompareService {
 
         final date = ts.toDate();
         final int bulanIndex = date.month - 1;
-        final List restock = data['restock'] ?? [];
+        final List items = data['items'] ?? [];
 
         int total = 0;
-        for (var item in restock) {
+        for (var item in items) {
           final num jumlah = item['jumlah'] ?? 0;
           total += jumlah.toInt();
         }

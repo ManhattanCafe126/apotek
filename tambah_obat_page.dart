@@ -260,7 +260,7 @@ class _TambahObatPageState extends State<TambahObatPage> {
               controller: _hargaController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                labelText: 'Harga (Rp)',
+                labelText: 'Harga (Rp.)',
                 hintText: '50000',
                 prefixIcon: const Icon(Icons.attach_money),
                 border: OutlineInputBorder(

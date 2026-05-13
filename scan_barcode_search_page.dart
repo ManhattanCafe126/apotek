@@ -16,7 +16,7 @@ class _ScanBarcodeSearchPageState extends State<ScanBarcodeSearchPage> {
   DrugData? _foundDrug;
   String? _errorMessage;
   String _searchManualBarcode = '';
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void dispose() {
@@ -83,13 +83,14 @@ class _ScanBarcodeSearchPageState extends State<ScanBarcodeSearchPage> {
         final searchLower = searchQuery.toLowerCase();
 
         return barcode == searchLower ||
-               batch == searchLower ||
-               nama.contains(searchLower);
+            batch == searchLower ||
+            nama.contains(searchLower);
       }).toList();
 
       if (results.isEmpty) {
         setState(() {
-          _errorMessage = '❌ Obat dengan barcode/batch/nama "$searchQuery" tidak ditemukan di database';
+          _errorMessage =
+              '❌ Obat dengan barcode/batch/nama "$searchQuery" tidak ditemukan di database';
         });
         return;
       }
@@ -166,7 +167,10 @@ class _ScanBarcodeSearchPageState extends State<ScanBarcodeSearchPage> {
                 child: Text(
                   'ATAU CARI MANUAL',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey,
+                  ),
                 ),
               ),
               const Divider(thickness: 2),

@@ -12,8 +12,6 @@ class OpenAIService {
   static Future<String> analisisTeksOCR_OpenAI(String teksOCR) async {
     final prompt =
         '''
-Anda adalah analis farmasi.
-
 Teks hasil OCR:
 $teksOCR
 
@@ -57,12 +55,8 @@ Tugas:
   static Future<String> ekstrakDataObatDariOCR(String teksOCR) async {
     final prompt =
         '''
-Anda adalah analis farmasi profesional.
-
 Teks hasil OCR:
 $teksOCR
-
-TUGAS: Ekstrak SEMUA data obat dari teks OCR dan return JSON ARRAY dengan banyak obat atau 1 obat.
 
 FORMAT JSON WAJIB (ARRAY - bisa 1+ OBJECTS):
 [
