@@ -21,9 +21,7 @@ class HistoriRekomendasiPage extends StatelessWidget {
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(
-              child: Text("Belum ada histori rekomendasi."),
-            );
+            return const Center(child: Text("Belum ada histori rekomendasi."));
           }
 
           return ListView(
@@ -45,18 +43,22 @@ class HistoriRekomendasiPage extends StatelessWidget {
                         : '-',
                   ),
                   children: [
-                    const Text("🟢 Perlu Dibeli Ulang"),
-                    ...restock.map((e) => ListTile(
-                      title: Text(e['nama']),
-                      subtitle: Text(e['alasan']),
-                      trailing: Text("+${e['jumlah']}"),
-                    )),
+                    const Text("Perlu Dibeli Ulang"),
+                    ...restock.map(
+                      (e) => ListTile(
+                        title: Text(e['nama']),
+                        subtitle: Text(e['alasan']),
+                        trailing: Text("+${e['jumlah']}"),
+                      ),
+                    ),
                     const Divider(),
-                    const Text("🔴 Tidak Perlu Dibeli"),
-                    ...tidakRestock.map((e) => ListTile(
-                      title: Text(e['nama']),
-                      subtitle: Text(e['alasan']),
-                    )),
+                    const Text("Tidak Perlu Dibeli"),
+                    ...tidakRestock.map(
+                      (e) => ListTile(
+                        title: Text(e['nama']),
+                        subtitle: Text(e['alasan']),
+                      ),
+                    ),
                   ],
                 ),
               );

@@ -1,23 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'openai_service.dart';
+import 'models/penjualan_model.dart';
 import 'models/rekomendasi_model.dart';
-import 'package:ocr/services/firestore_service.dart';
-
-/// 1️⃣ MODEL DATA (MOCK DATABASE)
-class DataObat {
-  String nama;
-  int terjual;
-  int sisaStok;
-  String tren;
-
-  DataObat({
-    required this.nama,
-    required this.terjual,
-    required this.sisaStok,
-    required this.tren,
-  });
-}
+import 'services/firestore_service.dart';
+import 'services/penjualan_service.dart';
 
 class RekomendasiPage extends StatefulWidget {
   const RekomendasiPage({super.key});
@@ -29,117 +14,131 @@ class RekomendasiPage extends StatefulWidget {
 class _RekomendasiPageState extends State<RekomendasiPage> {
   bool _isLoading = false;
   String? _errorMessage;
+  List<AnalisisTren> _analisisList = [];
 
-  /// HASIL PARSING
-  List<RestockItem> _restockList = [];
-  List<TidakRestockItem> _tidakRestockList = [];
-
-  /// 2️⃣ MOCK DATA PENJUALAN
-  final List<DataObat> _databasePenjualan = [
-    DataObat(
-      nama: "Paracetamol 500mg",
-      terjual: 150,
-      sisaStok: 10,
-      tren: "Naik Drastis",
-    ),
-    DataObat(nama: "Amoxicillin", terjual: 20, sisaStok: 85, tren: "Turun"),
-    DataObat(
-      nama: "Vitamin C IPI",
-      terjual: 200,
-      sisaStok: 5,
-      tren: "Stabil Tinggi",
-    ),
-    DataObat(nama: "Obat Batuk Komix", terjual: 45, sisaStok: 12, tren: "Naik"),
-    DataObat(
-      nama: "Minyak Kayu Putih",
-      terjual: 10,
-      sisaStok: 50,
-      tren: "Rendah",
-    ),
-  ];
-
-  // ==================================================
-  // 🔒 VALIDASI STRUKTUR JSON (ANTI ERROR)
-  // ==================================================
-  bool _isValidRekomendasiJson(Map<String, dynamic> json) {
-    if (!json.containsKey('restock')) return false;
-    if (!json.containsKey('tidak_restock')) return false;
-    if (json['restock'] is! List) return false;
-    if (json['tidak_restock'] is! List) return false;
-    return true;
-  }
-
-  // ==================================================
-  // 3️⃣ PROSES ANALISIS + PARSING JSON (AMAN)
-  // ==================================================
   Future<void> _analisisOtomatis() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
-      _restockList.clear();
-      _tidakRestockList.clear();
+      _analisisList.clear();
     });
 
-    // 1️⃣ Gabungkan data penjualan → string
-    String dataUntukAI = "";
-    for (var obat in _databasePenjualan) {
-      dataUntukAI +=
-      "- ${obat.nama}: Terjual ${obat.terjual}, "
-          "Sisa Stok ${obat.sisaStok}, Tren ${obat.tren}\n";
-    }
-
     try {
-      // 2️⃣ Panggil AI
-      final hasilAI = await OpenAIService.generateRekomendasi(dataUntukAI);
+      final obatNames = await PenjualanService.getAllObatNames();
 
-      // debugPrint("RAW AI JSON:\n$hasilAI");
-
-      // 3️⃣ Decode JSON
-      final Map<String, dynamic> decoded = jsonDecode(hasilAI);
-
-      if (!_isValidRekomendasiJson(decoded)) {
-        throw Exception("Struktur JSON tidak valid");
+      if (obatNames.isEmpty) {
+        setState(() {
+          _errorMessage =
+              'Belum ada data penjualan. Catat penjualan terlebih dahulu.';
+          _isLoading = false;
+        });
+        return;
       }
 
-      final List restockJson = decoded['restock'];
-      final List tidakRestockJson = decoded['tidak_restock'];
+      List<AnalisisTren> hasil = [];
+      for (String namaObat in obatNames) {
+        if (namaObat.isEmpty) continue;
+        final analisis = await PenjualanService.analyzeObat(namaObat);
+        hasil.add(analisis);
+      }
 
-      final List<RestockItem> restockParsed =
-      restockJson.map((e) => RestockItem.fromJson(e)).toList();
+      hasil.sort((a, b) {
+        final aPriority = _getRecommendationPriority(a.getRekomendasi());
+        final bPriority = _getRecommendationPriority(b.getRekomendasi());
+        return aPriority.compareTo(bPriority);
+      });
 
-      final List<TidakRestockItem> tidakRestockParsed =
-      tidakRestockJson.map((e) => TidakRestockItem.fromJson(e)).toList();
-
-      // 4️⃣ Update UI
       setState(() {
-        _restockList = restockParsed;
-        _tidakRestockList = tidakRestockParsed;
+        _analisisList = hasil;
         _isLoading = false;
       });
 
-      // 5️⃣ Simpan ke Firebase (DI LUAR setState)
       await FirestoreService.simpanRekomendasi(
-        restock: restockParsed,
-        tidakRestock: tidakRestockParsed,
+        restock: hasil
+            .where((a) => a.getRekomendasi().startsWith('Beli'))
+            .map(
+              (a) => RestockItem(
+                nama: a.namaObat,
+                saran: 'Beli',
+                jumlah: _calculateRestockAmount(a),
+                alasan: a.getRekomendasi(),
+              ),
+            )
+            .toList(),
+        tidakRestock: hasil
+            .where((a) => !a.getRekomendasi().startsWith('Beli'))
+            .map(
+              (a) => TidakRestockItem(
+                nama: a.namaObat,
+                alasan: a.getRekomendasi(),
+              ),
+            )
+            .toList(),
       );
     } catch (e) {
       setState(() {
-        _errorMessage =
-        "AI gagal menghasilkan rekomendasi yang valid. Silakan coba lagi.";
+        _errorMessage = 'Error: $e';
         _isLoading = false;
       });
     }
   }
 
+  int _getRecommendationPriority(String rekomendasi) {
+    if (rekomendasi.startsWith('Beli')) return 0;
+    if (rekomendasi.startsWith('Jual')) return 1;
+    return 2;
+  }
 
-  // ==================================================
-  // 4️⃣ UI
-  // ==================================================
+  int _calculateRestockAmount(AnalisisTren analisis) {
+    if (analisis.tren > 0.2) return 50;
+    if (analisis.tren > 0) return 30;
+    return 20;
+  }
+
+  Widget _buildStatusBadge(String rekomendasi) {
+    Color bgColor;
+    IconData icon;
+
+    if (rekomendasi.startsWith('Beli')) {
+      bgColor = Colors.green;
+      icon = Icons.shopping_cart;
+    } else if (rekomendasi.startsWith('Jual')) {
+      bgColor = Colors.orange;
+      icon = Icons.sell;
+    } else {
+      bgColor = Colors.blue;
+      icon = Icons.pause_circle;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Colors.white),
+          const SizedBox(width: 4),
+          Text(
+            rekomendasi.split(' - ')[0],
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Smart Restock System"),
+        title: const Text('Rekomendasi Cerdas (FEFO)'),
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
       ),
@@ -148,124 +147,200 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              "Data Penjualan Bulan Ini (Mock DB):",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 10),
-
-            /// LIST DATA PENJUALAN
-            Expanded(
-              flex: 1,
-              child: ListView.builder(
-                itemCount: _databasePenjualan.length,
-                itemBuilder: (context, index) {
-                  final data = _databasePenjualan[index];
-                  return ListTile(
-                    leading:
-                    const Icon(Icons.medication, color: Colors.blue),
-                    title: Text(data.nama),
-                    subtitle: Text(
-                      "Terjual: ${data.terjual} | "
-                          "Sisa: ${data.sisaStok} | "
-                          "Tren: ${data.tren}",
-                    ),
-                  );
-                },
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                border: Border.all(color: Colors.blue),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Smart Rekomendasi berdasarkan TREN PENJUALAN, STOK, dan FEFO',
+                style: TextStyle(fontSize: 12, color: Colors.blue),
               ),
             ),
-
-            const SizedBox(height: 10),
-
+            const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: _isLoading ? null : _analisisOtomatis,
-              icon: const Icon(Icons.auto_graph),
-              label: Text(
-                _isLoading
-                    ? "Memproses Data..."
-                    : "Generate Saran Pembelian (AI)",
-              ),
+              icon: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.auto_graph),
+              label: Text(_isLoading ? 'Menganalisis...' : 'Jalankan Analisis'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.deepPurple,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
             ),
-
-            const SizedBox(height: 10),
-            const Divider(),
-
-            /// ERROR MESSAGE
+            const SizedBox(height: 16),
             if (_errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.all(8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red[50],
+                  border: Border.all(color: Colors.red),
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 child: Text(
                   _errorMessage!,
-                  style: const TextStyle(color: Colors.red),
+                  style: const TextStyle(color: Colors.red, fontSize: 12),
                 ),
               ),
-
-            /// EMPTY STATE
-            if (!_isLoading &&
-                _errorMessage == null &&
-                _restockList.isEmpty &&
-                _tidakRestockList.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(12),
-                child: Text(
-                  "Belum ada rekomendasi yang ditampilkan.",
-                  style: TextStyle(fontStyle: FontStyle.italic),
-                ),
-              ),
-
-            /// HASIL RESTOCK
-            if (_restockList.isNotEmpty) ...[
-              const Text(
-                "Perlu Dibeli Ulang",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              ..._restockList.map(
-                    (item) => Card(
-                  color: Colors.green[50],
-                  child: ListTile(
-                    leading: const Icon(Icons.add_shopping_cart,
-                        color: Colors.green),
-                    title: Text(item.nama),
-                    subtitle: Text(item.alasan),
-                    trailing: Text(
-                      "+${item.jumlah}",
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
+            const SizedBox(height: 16),
+            if (!_isLoading && _analisisList.isEmpty)
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.info, size: 48, color: Colors.grey),
+                      SizedBox(height: 16),
+                      Text(
+                        'Tekan tombol di atas untuk memulai analisis.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ),
-            ],
+            if (_analisisList.isNotEmpty)
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _analisisList.length,
+                  itemBuilder: (context, index) {
+                    final analisis = _analisisList[index];
+                    final rekomendasi = analisis.getRekomendasi();
 
-            /// HASIL TIDAK RESTOCK
-            if (_tidakRestockList.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              const Text(
-                "Tidak Perlu Dibeli",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              ..._tidakRestockList.map(
-                    (item) => Card(
-                  color: Colors.red[50],
-                  child: ListTile(
-                    leading:
-                    const Icon(Icons.remove_circle, color: Colors.red),
-                    title: Text(item.nama),
-                    subtitle: Text(item.alasan),
-                  ),
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      elevation: 2,
+                      child: ExpansionTile(
+                        leading: _buildStatusBadge(rekomendasi),
+                        title: Text(
+                          analisis.namaObat,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        subtitle: Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Row(
+                            children: [
+                              Icon(
+                                analisis.tren > 0.2
+                                    ? Icons.trending_up
+                                    : analisis.tren < -0.2
+                                    ? Icons.trending_down
+                                    : Icons.trending_flat,
+                                size: 16,
+                                color: analisis.tren > 0.2
+                                    ? Colors.green
+                                    : analisis.tren < -0.2
+                                    ? Colors.red
+                                    : Colors.grey,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${analisis.getTrenLabel()} • Stok: ${analisis.stokTerkini}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildInfoRow(
+                                  'Penjualan Bulan Ini:',
+                                  '${analisis.totalPenjualanBulanIni} unit',
+                                ),
+                                const SizedBox(height: 10),
+                                _buildInfoRow(
+                                  'Penjualan Bulan Lalu:',
+                                  '${analisis.totalPenjualanBulanLalu} unit',
+                                ),
+                                const SizedBox(height: 10),
+                                _buildInfoRow(
+                                  'Stok Terkini:',
+                                  '${analisis.stokTerkini} unit',
+                                  color: analisis.stokTerkini < 10
+                                      ? Colors.red
+                                      : Colors.green,
+                                ),
+                                const SizedBox(height: 10),
+                                _buildInfoRow(
+                                  'Tren Perubahan:',
+                                  '${(analisis.tren * 100).toStringAsFixed(0)}%',
+                                  color: analisis.tren > 0
+                                      ? Colors.green
+                                      : Colors.red,
+                                ),
+                                const Divider(height: 20),
+                                const Text(
+                                  'REKOMENDASI:',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber[50],
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: Colors.amber),
+                                  ),
+                                  child: Text(
+                                    rekomendasi,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ),
-            ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value, {Color? color}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+            color: color,
+          ),
+        ),
+      ],
     );
   }
 }
