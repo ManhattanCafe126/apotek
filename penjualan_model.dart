@@ -72,14 +72,13 @@ class Penjualan {
   }
 }
 
-/// Model untuk analisis tren penjualan obat
 class AnalisisTren {
   final String namaObat;
-  final double tren; // -1 = turun, 0 = sedang, 1 = naik
+  final double tren;
   final int totalPenjualanBulanIni;
   final int totalPenjualanBulanLalu;
   final int stokTerkini;
-  final List<Map<String, dynamic>> stokDetail; // Untuk FEFO: {batch, exp_date, jumlah}
+  final List<Map<String, dynamic>> stokDetail;
 
   AnalisisTren({
     required this.namaObat,
@@ -98,7 +97,6 @@ class AnalisisTren {
     return 'Stabil';
   }
 
-  /// Parse tanggal kedaluwarsa DD/MM/YYYY
   DateTime? _parseExpDate(String dateStr) {
     try {
       final parts = dateStr.split('/');
@@ -115,16 +113,13 @@ class AnalisisTren {
     return null;
   }
 
-  /// Hitung hari tersisa sampai kedaluwarsa
   int? _daysUntilExpiry(String expDateStr) {
     final expDate = _parseExpDate(expDateStr);
     if (expDate == null) return null;
     return expDate.difference(DateTime.now()).inDays;
   }
 
-  /// Ambil stok terdekat kedaluwarsa (FEFO First Expiry First Out)
   List<Map<String, dynamic>> getStokFEFO() {
-    // Sort by expiry date (earliest first)
     final sorted = List<Map<String, dynamic>>.from(stokDetail);
     sorted.sort((a, b) {
       final daysA = _daysUntilExpiry(a['exp_date'] ?? '') ?? 999999;
@@ -134,11 +129,8 @@ class AnalisisTren {
     return sorted;
   }
 
-  /// Rekomendasi pembelian dengan logika FEFO
   String getRekomendasi() {
     final stokFEFO = getStokFEFO();
-
-    // Cek stok akan kedaluwarsa dalam 30 hari (PRIORITAS UTAMA)
     final stokUrgent = stokFEFO
         .where((s) => (_daysUntilExpiry(s['exp_date'] ?? '') ?? 999999) <= 30)
         .toList();
@@ -146,23 +138,15 @@ class AnalisisTren {
     if (stokUrgent.isNotEmpty) {
       return 'Jual - ${stokUrgent.length} batch mendekati exp (FEFO)';
     }
-
-    // Tren NAIK + stok MENIPIS → BELI
     if (tren > 0.15 && stokTerkini < 20) {
       return 'Beli - Tren naik, stok menipis';
     }
-
-    // Stok SANGAT MENIPIS → BELI (regardless of trend)
     if (stokTerkini < 5) {
       return 'Beli - Stok sangat menipis (<5)';
     }
-
-    // Tren TURUN → PERTAHANKAN (jangan beli)
     if (tren < -0.15) {
       return 'Pertahankan - Tren menurun, jangan beli';
     }
-
-    // Tren SEDANG/STABIL
     if (tren >= -0.15 && tren <= 0.15) {
       if (stokTerkini < 15) {
         return 'Beli - Stok normal, persiapan pembelian';

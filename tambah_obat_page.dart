@@ -56,7 +56,6 @@ class _TambahObatPageState extends State<TambahObatPage> {
     super.dispose();
   }
 
-  // Helper: Parse tanggal OCR format DD/MM/YYYY ke DateTime
   DateTime? _parseOCRDate(String dateStr) {
     if (dateStr.isEmpty) return null;
     try {
@@ -73,12 +72,10 @@ class _TambahObatPageState extends State<TambahObatPage> {
     return null;
   }
 
-  // Helper: Format DateTime ke string DD/MM/YYYY
   String _formatDateToDDMMYYYY(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
-  // Buka calendar picker untuk exp date
   Future<void> _openDatePicker() async {
     DateTime initialDate =
         _parseOCRDate(_expDateController.text) ?? DateTime.now();
@@ -120,7 +117,6 @@ class _TambahObatPageState extends State<TambahObatPage> {
       _errorMessage = null;
     });
 
-    // Validasi input
     if (_namaController.text.isEmpty) {
       setState(() => _errorMessage = 'Nama obat tidak boleh kosong');
       return;
@@ -137,14 +133,13 @@ class _TambahObatPageState extends State<TambahObatPage> {
         jumlahStok: int.tryParse(_jumlahStokController.text) ?? 0,
       );
 
-      // Simpan ke Firestore
       await FirestoreService.tambahObat(newDrug);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Obat berhasil ditambahkan')),
+          const SnackBar(content: Text('Obat berhasil ditambahkan')),
         );
-        Navigator.pop(context, true); // Return true, bukan object
+        Navigator.pop(context, true);
       }
     } catch (e) {
       setState(() => _errorMessage = 'Gagal menyimpan: $e');
@@ -175,7 +170,7 @@ class _TambahObatPageState extends State<TambahObatPage> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Text(
-                  '📸 Data dari OCR terdeteksi. Silakan sesuaikan jika diperlukan.',
+                  'Data dari OCR terdeteksi. Silakan sesuaikan jika diperlukan.',
                   style: TextStyle(color: Colors.blue, fontSize: 14),
                 ),
               ),
@@ -194,7 +189,6 @@ class _TambahObatPageState extends State<TambahObatPage> {
                 ),
               ),
             const SizedBox(height: 16),
-            // NAMA OBAT
             TextField(
               controller: _namaController,
               decoration: InputDecoration(
@@ -207,7 +201,6 @@ class _TambahObatPageState extends State<TambahObatPage> {
               ),
             ),
             const SizedBox(height: 16),
-            // BATCH
             TextField(
               controller: _batchController,
               decoration: InputDecoration(
@@ -220,7 +213,6 @@ class _TambahObatPageState extends State<TambahObatPage> {
               ),
             ),
             const SizedBox(height: 16),
-            // EXP DATE - DATE PICKER BUTTON (Read-only)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -255,7 +247,6 @@ class _TambahObatPageState extends State<TambahObatPage> {
               ],
             ),
             const SizedBox(height: 16),
-            // HARGA
             TextField(
               controller: _hargaController,
               keyboardType: TextInputType.number,
@@ -269,7 +260,6 @@ class _TambahObatPageState extends State<TambahObatPage> {
               ),
             ),
             const SizedBox(height: 16),
-            // JUMLAH STOK
             TextField(
               controller: _jumlahStokController,
               keyboardType: TextInputType.number,
@@ -283,7 +273,6 @@ class _TambahObatPageState extends State<TambahObatPage> {
               ),
             ),
             const SizedBox(height: 24),
-            // TOMBOL SIMPAN
             ElevatedButton.icon(
               onPressed: _isSaving ? null : _simpanObat,
               icon: _isSaving
@@ -301,7 +290,6 @@ class _TambahObatPageState extends State<TambahObatPage> {
               ),
             ),
             const SizedBox(height: 12),
-            // TOMBOL BATAL
             ElevatedButton(
               onPressed: _isSaving ? null : () => Navigator.pop(context),
               style: ElevatedButton.styleFrom(

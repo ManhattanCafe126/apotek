@@ -21,9 +21,9 @@ void main() async {
   // Login anonymous untuk akses Firestore
   try {
     await FirebaseAuth.instance.signInAnonymously();
-    debugPrint('✅ Anonymous login berhasil');
+    debugPrint('Anonymous login berhasil');
   } catch (e) {
-    debugPrint('❌ Anonymous login gagal: $e');
+    debugPrint('Anonymous login gagal: $e');
   }
 
   runApp(const MyApp());

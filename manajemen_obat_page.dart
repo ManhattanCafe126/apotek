@@ -48,9 +48,9 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Error scanning: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error scanning: $e')));
       }
     }
   }
@@ -223,11 +223,11 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
                     children: [
                       _buildFilterChip('semua', 'Semua'),
                       const SizedBox(width: 8),
-                      _buildFilterChip('kritis', '🔴 Kritis (<5)'),
+                      _buildFilterChip('kritis', 'Kritis (<5)'),
                       const SizedBox(width: 8),
-                      _buildFilterChip('rendah', '🟡 Rendah (5-20)'),
+                      _buildFilterChip('rendah', 'Rendah (5-20)'),
                       const SizedBox(width: 8),
-                      _buildFilterChip('normal', '🟢 Normal (>20)'),
+                      _buildFilterChip('normal', 'Normal (>20)'),
                     ],
                   ),
                 ),
@@ -258,9 +258,9 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
                     children: [
                       _buildExpDateChip('semua', 'Semua'),
                       const SizedBox(width: 8),
-                      _buildExpDateChip('terlama', '📅 Terlama'),
+                      _buildExpDateChip('terlama', 'Terlama'),
                       const SizedBox(width: 8),
-                      _buildExpDateChip('terbaru', '📅 Terbaru'),
+                      _buildExpDateChip('terbaru', 'Terbaru'),
                     ],
                   ),
                 ),
@@ -651,9 +651,7 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
               if (jumlah == null || jumlah <= 0) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('❌ Masukkan jumlah yang valid'),
-                    ),
+                    const SnackBar(content: Text('Masukkan jumlah yang valid')),
                   );
                 }
                 return;
@@ -671,7 +669,7 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
                   final docRef = snapshot.docs.first.reference;
                   final currentStok =
                       (snapshot.docs.first['jumlah_stok'] as num?)?.toInt() ??
-                          0;
+                      0;
                   final newStok = currentStok + jumlah;
 
                   await docRef.update({'jumlah_stok': newStok});
@@ -692,7 +690,7 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          '✅ Stok $nama ditambah $jumlah unit (Total: $newStok)',
+                          'Stok $nama ditambah $jumlah unit (Total: $newStok)',
                         ),
                         backgroundColor: Colors.green,
                       ),
@@ -701,9 +699,9 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
                 }
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('❌ Error: $e')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Error: $e')));
                 }
               }
             },
@@ -734,7 +732,7 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
               FirebaseFirestore.instance.collection('obat').doc(docId).delete();
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('✅ Obat berhasil dihapus')),
+                const SnackBar(content: Text('Obat berhasil dihapus')),
               );
             },
             child: const Text('Hapus', style: TextStyle(color: Colors.red)),

@@ -4,9 +4,9 @@ class GrafikCompareService {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   static Stream<Map<int, List<int>>> streamPerbandinganTahun(
-      int tahunAktif,
-      int tahunLalu,
-      ) {
+    int tahunAktif,
+    int tahunLalu,
+  ) {
     return _db.collection('penjualan').snapshots().asyncMap((snapshot) async {
       final List<int> dataAktif = List.filled(12, 0);
       final List<int> dataLalu = List.filled(12, 0);
@@ -33,10 +33,7 @@ class GrafikCompareService {
         }
       }
 
-      return {
-        tahunAktif: dataAktif,
-        tahunLalu: dataLalu,
-      };
+      return {tahunAktif: dataAktif, tahunLalu: dataLalu};
     });
   }
 }

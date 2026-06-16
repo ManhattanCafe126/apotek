@@ -402,7 +402,7 @@ class _ObatListPageState extends State<ObatListPage> {
               FirebaseFirestore.instance.collection('obat').doc(docId).delete();
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('✅ Obat berhasil dihapus')),
+                const SnackBar(content: Text('Obat berhasil dihapus')),
               );
             },
             child: const Text('Hapus', style: TextStyle(color: Colors.red)),

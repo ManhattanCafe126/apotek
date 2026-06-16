@@ -42,7 +42,7 @@ Tugas:
     );
 
     if (response.statusCode != 200) {
-      return "❌ LiteLLM Error ${response.statusCode}:\n${response.body}";
+      return "LiteLLM Error ${response.statusCode}:\n${response.body}";
     }
 
     final json = jsonDecode(response.body);
@@ -183,12 +183,11 @@ FORMAT JSON WAJIB:
     );
 
     if (response.statusCode != 200) {
-      return "❌ LiteLLM Error ${response.statusCode}:\n${response.body}";
+      return "LiteLLM Error ${response.statusCode}:\n${response.body}";
     }
 
     final json = jsonDecode(response.body);
 
-    /// ⚠️ Output HARUS berupa JSON string dari AI
     return json['choices'][0]['message']['content'];
   }
 }

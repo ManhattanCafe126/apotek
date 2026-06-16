@@ -4,9 +4,10 @@ import '../models/penjualan_model.dart';
 
 class PenjualanService {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
-
-  /// Ambil semua penjualan dalam bulan tertentu
-  static Future<List<Penjualan>> getPenjualanByMonth(int month, int year) async {
+  static Future<List<Penjualan>> getPenjualanByMonth(
+    int month,
+    int year,
+  ) async {
     try {
       final DateTime awalBulan = DateTime(year, month, 1);
       final DateTime akhirBulan = DateTime(year, month + 1, 0);
@@ -26,9 +27,10 @@ class PenjualanService {
     }
   }
 
-  /// Hitung total penjualan per obat dalam bulan tertentu
   static Future<Map<String, int>> getTotalPenjualanPerObatByMonth(
-      int month, int year) async {
+    int month,
+    int year,
+  ) async {
     try {
       final penjualanList = await getPenjualanByMonth(month, year);
       final Map<String, int> result = {};
@@ -46,14 +48,13 @@ class PenjualanService {
     }
   }
 
-  /// Hitung tren penjualan (perubahan bulan lalu ke bulan ini)
-  /// Return: double (-1 sampai 1, di mana >0 = naik, <0 = turun)
   static Future<double> calculateTren(String namaObat) async {
     try {
       final now = DateTime.now();
-      final bulanIni = await getTotalPenjualanPerObatByMonth(now.month, now.year);
-
-      // Bulan lalu
+      final bulanIni = await getTotalPenjualanPerObatByMonth(
+        now.month,
+        now.year,
+      );
       final bulanLalu = now.month == 1
           ? await getTotalPenjualanPerObatByMonth(12, now.year - 1)
           : await getTotalPenjualanPerObatByMonth(now.month - 1, now.year);
@@ -71,7 +72,6 @@ class PenjualanService {
     }
   }
 
-  /// Ambil stok terkini dari obat
   static Future<int> getStokTerkini(String namaObat) async {
     try {
       final snapshot = await _db
@@ -92,9 +92,9 @@ class PenjualanService {
     }
   }
 
-  /// Ambil detail stok (FEFO) dari obat tertentu
   static Future<List<Map<String, dynamic>>> getDetailStokFEFO(
-      String namaObat) async {
+    String namaObat,
+  ) async {
     try {
       final snapshot = await _db
           .collection('obat')
@@ -111,7 +111,6 @@ class PenjualanService {
         };
       }).toList();
 
-      // Sort by exp_date (terdekat ke depan)
       stokList.sort((a, b) {
         final dateA = _parseDate(a['exp_date'] as String);
         final dateB = _parseDate(b['exp_date'] as String);
@@ -128,7 +127,6 @@ class PenjualanService {
     }
   }
 
-  /// Helper: Parse tanggal DD/MM/YYYY
   static DateTime? _parseDate(String dateStr) {
     try {
       final parts = dateStr.split('/');
@@ -145,23 +143,28 @@ class PenjualanService {
     return null;
   }
 
-  /// Analisis lengkap untuk satu obat
   static Future<AnalisisTren> analyzeObat(String namaObat) async {
     try {
       final now = DateTime.now();
 
       final penjualanBulanIni =
-          (await getTotalPenjualanPerObatByMonth(now.month, now.year))[
-                  namaObat] ??
-              0;
+          (await getTotalPenjualanPerObatByMonth(
+            now.month,
+            now.year,
+          ))[namaObat] ??
+          0;
 
       final penjualanBulanLalu = now.month == 1
-          ? (await getTotalPenjualanPerObatByMonth(12, now.year - 1))[
-                  namaObat] ??
-              0
-          : (await getTotalPenjualanPerObatByMonth(now.month - 1, now.year))[
-                  namaObat] ??
-              0;
+          ? (await getTotalPenjualanPerObatByMonth(
+                  12,
+                  now.year - 1,
+                ))[namaObat] ??
+                0
+          : (await getTotalPenjualanPerObatByMonth(
+                  now.month - 1,
+                  now.year,
+                ))[namaObat] ??
+                0;
 
       final tren = await calculateTren(namaObat);
       final stokTerkini = await getStokTerkini(namaObat);
@@ -188,7 +191,6 @@ class PenjualanService {
     }
   }
 
-  /// Ambil list semua obat yang unik
   static Future<List<String>> getAllObatNames() async {
     try {
       final penjualanSnapshot = await _db.collection('penjualan').get();
@@ -209,7 +211,6 @@ class PenjualanService {
     }
   }
 
-  /// Stream data penjualan per bulan (untuk grafik)
   static Stream<List<int>> streamPenjualanPerBulan() {
     final int tahun = DateTime.now().year;
 
@@ -238,7 +239,6 @@ class PenjualanService {
     });
   }
 
-  /// Stream perbandingan penjualan antar tahun
   static Stream<Map<int, List<int>>> streamPerbandinganTahun(
     int tahunAktif,
     int tahunLalu,
@@ -269,10 +269,7 @@ class PenjualanService {
         }
       }
 
-      return {
-        tahunAktif: dataAktif,
-        tahunLalu: dataLalu,
-      };
+      return {tahunAktif: dataAktif, tahunLalu: dataLalu};
     });
   }
 }

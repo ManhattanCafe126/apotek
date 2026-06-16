@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 class ExpiryUtils {
-  /// Parse expiry date from DD/MM/YYYY format to DateTime
   static DateTime parseExpDate(String dateStr) {
     if (dateStr.isEmpty) return DateTime(9999);
     try {
@@ -18,8 +17,6 @@ class ExpiryUtils {
     return DateTime(9999);
   }
 
-  /// Get days remaining until expiry
-  /// Positive = future, 0 = today, Negative = past/expired
   static int getDaysUntilExpiry(String expDateStr) {
     if (expDateStr.isEmpty) return 999;
     try {
@@ -31,10 +28,6 @@ class ExpiryUtils {
     }
   }
 
-  /// Get expiry status based on days remaining
-  /// - "Kadaluarsa" (< 0 days)
-  /// - "Waspada" (0-180 days)
-  /// - "Aman" (>= 180 days)
   static String getExpiryStatus(String expDateStr) {
     if (expDateStr.isEmpty) return 'Unknown';
 
@@ -49,35 +42,32 @@ class ExpiryUtils {
     }
   }
 
-  /// Get color for status
   static Color getStatusColor(String status) {
     switch (status) {
       case 'Kadaluarsa':
-        return const Color(0xFFF44336); // Red
+        return const Color(0xFFF44336);
       case 'Waspada':
-        return const Color(0xFFFF9800); // Orange
+        return const Color(0xFFFF9800);
       case 'Aman':
-        return const Color(0xFF4CAF50); // Green
+        return const Color(0xFF4CAF50);
       default:
         return Colors.grey;
     }
   }
 
-  /// Get status background color (lighter)
   static Color getStatusBackgroundColor(String status) {
     switch (status) {
       case 'Kadaluarsa':
-        return const Color(0xFFFFEBEE); // Light red
+        return const Color(0xFFFFEBEE);
       case 'Waspada':
-        return const Color(0xFFFFF3E0); // Light orange
+        return const Color(0xFFFFF3E0);
       case 'Aman':
-        return const Color(0xFFE8F5E9); // Light green
+        return const Color(0xFFE8F5E9);
       default:
         return Colors.grey[100]!;
     }
   }
 
-  /// Format days left to readable string
   static String formatDaysLeft(int daysLeft) {
     if (daysLeft < 0) {
       return '${(-daysLeft).abs()} hari lalu';
@@ -96,13 +86,11 @@ class ExpiryUtils {
     }
   }
 
-  /// Check if drug is already expired
   static bool isExpired(String expDateStr) {
     if (expDateStr.isEmpty) return false;
     return getDaysUntilExpiry(expDateStr) < 0;
   }
 
-  /// Check if drug needs warning (< 6 months)
   static bool needsWarning(String expDateStr) {
     if (expDateStr.isEmpty) return false;
     final daysLeft = getDaysUntilExpiry(expDateStr);

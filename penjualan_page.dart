@@ -93,9 +93,9 @@ class _PenjualanPageState extends State<PenjualanPage> {
         _addToCart(foundDrug);
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('❌ Obat tidak ditemukan')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Obat tidak ditemukan')));
         }
       }
     } catch (e) {
@@ -137,9 +137,9 @@ class _PenjualanPageState extends State<PenjualanPage> {
 
       if (results.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('❌ Obat tidak ditemukan')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Obat tidak ditemukan')));
         }
         return;
       }
@@ -211,7 +211,7 @@ class _PenjualanPageState extends State<PenjualanPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '❌ Stok tidak cukup. Stok tersedia: ${drug.jumlahStok}',
+              'Stok tidak cukup. Stok tersedia: ${drug.jumlahStok}',
             ),
             backgroundColor: Colors.red,
           ),
@@ -244,7 +244,7 @@ class _PenjualanPageState extends State<PenjualanPage> {
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('✅ ${drug.nama} ditambahkan ke keranjang')),
+      SnackBar(content: Text('${drug.nama} ditambahkan ke keranjang')),
     );
   }
 
@@ -273,9 +273,7 @@ class _PenjualanPageState extends State<PenjualanPage> {
           if (newQuantity > currentStock) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(
-                  '❌ Stok tidak cukup. Stok tersedia: $currentStock',
-                ),
+                content: Text('Stok tidak cukup. Stok tersedia: $currentStock'),
                 backgroundColor: Colors.red,
               ),
             );
@@ -369,7 +367,7 @@ class _PenjualanPageState extends State<PenjualanPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '✅ Penjualan berhasil disimpan (${_cartItems.length} item)',
+              'Penjualan berhasil disimpan (${_cartItems.length} item)',
             ),
             backgroundColor: Colors.green,
           ),

@@ -23,7 +23,6 @@ class _StockOpnamePageState extends State<StockOpnamePage> {
       ),
       body: Column(
         children: [
-          // Filter Status
           Padding(
             padding: const EdgeInsets.all(12),
             child: SingleChildScrollView(
@@ -32,17 +31,15 @@ class _StockOpnamePageState extends State<StockOpnamePage> {
                 children: [
                   _buildFilterChip('semua', 'Semua'),
                   const SizedBox(width: 8),
-                  _buildFilterChip('kritis', '🔴 Kritis (<5)'),
+                  _buildFilterChip('kritis', 'Kritis (<5)'),
                   const SizedBox(width: 8),
-                  _buildFilterChip('rendah', '🟡 Rendah (5-20)'),
+                  _buildFilterChip('rendah', 'Rendah (5-20)'),
                   const SizedBox(width: 8),
-                  _buildFilterChip('normal', '🟢 Normal (>20)'),
+                  _buildFilterChip('normal', 'Normal (>20)'),
                 ],
               ),
             ),
           ),
-
-          // Stream Stok Real-Time
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirestoreService.streamStokRealtime(),
@@ -70,8 +67,6 @@ class _StockOpnamePageState extends State<StockOpnamePage> {
                     ),
                   );
                 }
-
-                // Filter data berdasarkan status
                 final allDocs = snapshot.data!.docs;
                 final filteredDocs = allDocs.where((doc) {
                   final stok = (doc['jumlah_stok'] ?? 0) as num;
@@ -103,7 +98,6 @@ class _StockOpnamePageState extends State<StockOpnamePage> {
                         ? doc['lastStockOpname'] as Timestamp?
                         : null;
 
-                    // Tentukan warna dan badge berdasarkan stok
                     Color statusColor;
                     String statusText;
                     if (stok < 5) {
@@ -355,9 +349,7 @@ class _StockOpnamePageState extends State<StockOpnamePage> {
               if (jumlah == null || jumlah <= 0) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('❌ Masukkan jumlah yang valid'),
-                    ),
+                    const SnackBar(content: Text('Masukkan jumlah yang valid')),
                   );
                 }
                 return;
@@ -369,7 +361,7 @@ class _StockOpnamePageState extends State<StockOpnamePage> {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('✅ Stok $nama ditambah $jumlah unit'),
+                      content: Text('Stok $nama ditambah $jumlah unit'),
                       backgroundColor: Colors.green,
                     ),
                   );
@@ -378,7 +370,7 @@ class _StockOpnamePageState extends State<StockOpnamePage> {
                 if (mounted) {
                   ScaffoldMessenger.of(
                     context,
-                  ).showSnackBar(SnackBar(content: Text('❌ Error: $e')));
+                  ).showSnackBar(SnackBar(content: Text('Error: $e')));
                 }
               }
             },

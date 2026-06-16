@@ -4,7 +4,6 @@ import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'models/penjualan_model.dart';
 import 'services/firestore_service.dart';
 
-/// Format currency to Rupiah with thousand separator
 String formatRupiah(double amount) {
   return 'Rp. ${amount.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
 }
@@ -17,10 +16,8 @@ class HistoriPenjualanPage extends StatefulWidget {
 }
 
 class _HistoriPenjualanPageState extends State<HistoriPenjualanPage> {
-  String _selectedFilter = 'hari_ini'; // 'hari_ini', 'kemarin', 'tanggal'
+  String _selectedFilter = 'hari_ini';
   DateTime? _selectedDate;
-
-  /// Check if date is today
   bool _isToday(DateTime date) {
     final now = DateTime.now();
     return date.year == now.year &&
@@ -28,7 +25,6 @@ class _HistoriPenjualanPageState extends State<HistoriPenjualanPage> {
         date.day == now.day;
   }
 
-  /// Check if date is yesterday
   bool _isYesterday(DateTime date) {
     final yesterday = DateTime.now().subtract(const Duration(days: 1));
     return date.year == yesterday.year &&
@@ -36,13 +32,11 @@ class _HistoriPenjualanPageState extends State<HistoriPenjualanPage> {
         date.day == yesterday.day;
   }
 
-  /// Parse timestamp ke format DD/MM HH:MM
   String _formatTransactionTime(Timestamp timestamp) {
     final date = timestamp.toDate();
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 
-  /// Filter transaksi berdasarkan pilihan filter
   List<DocumentSnapshot> _filterTransactions(List<DocumentSnapshot> docs) {
     return docs.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
@@ -69,7 +63,6 @@ class _HistoriPenjualanPageState extends State<HistoriPenjualanPage> {
     }).toList();
   }
 
-  /// Tampilkan date picker untuk pilih tanggal
   Future<void> _showDatePicker() async {
     final results = await showCalendarDatePicker2Dialog(
       context: context,
@@ -90,7 +83,6 @@ class _HistoriPenjualanPageState extends State<HistoriPenjualanPage> {
     }
   }
 
-  /// Tampilkan detail transaksi
   void _showTransactionDetails(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     final itemsList = (data['items'] as List?) ?? [];
@@ -158,7 +150,6 @@ class _HistoriPenjualanPageState extends State<HistoriPenjualanPage> {
       ),
       body: Column(
         children: [
-          // Date Filter
           Padding(
             padding: const EdgeInsets.all(12),
             child: Column(
@@ -217,8 +208,6 @@ class _HistoriPenjualanPageState extends State<HistoriPenjualanPage> {
           ),
 
           const Divider(),
-
-          // Total Penjualan Summary
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             child: StreamBuilder<QuerySnapshot>(

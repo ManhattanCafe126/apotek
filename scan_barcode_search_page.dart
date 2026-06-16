@@ -90,7 +90,7 @@ class _ScanBarcodeSearchPageState extends State<ScanBarcodeSearchPage> {
       if (results.isEmpty) {
         setState(() {
           _errorMessage =
-              '❌ Obat dengan barcode/batch/nama "$searchQuery" tidak ditemukan di database';
+              'Obat dengan barcode/batch/nama "$searchQuery" tidak ditemukan di database';
         });
         return;
       }
@@ -107,7 +107,6 @@ class _ScanBarcodeSearchPageState extends State<ScanBarcodeSearchPage> {
     }
   }
 
-  // Helper: Format tanggal
   DateTime? _parseExpDate(String dateStr) {
     if (dateStr.isEmpty) return null;
     try {
@@ -124,7 +123,6 @@ class _ScanBarcodeSearchPageState extends State<ScanBarcodeSearchPage> {
     return null;
   }
 
-  // Check apakah kadaluarsa
   bool _isExpired(String expDateStr) {
     if (expDateStr.isEmpty) return false;
     final expDate = _parseExpDate(expDateStr);
@@ -146,7 +144,6 @@ class _ScanBarcodeSearchPageState extends State<ScanBarcodeSearchPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Scan Button
               ElevatedButton.icon(
                 onPressed: _isScanning ? null : _scanBarcode,
                 icon: const Icon(Icons.qr_code_scanner, size: 30),
@@ -159,8 +156,6 @@ class _ScanBarcodeSearchPageState extends State<ScanBarcodeSearchPage> {
               ),
 
               const SizedBox(height: 20),
-
-              // DIVIDER
               const Divider(thickness: 2),
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 12),
@@ -176,8 +171,6 @@ class _ScanBarcodeSearchPageState extends State<ScanBarcodeSearchPage> {
               const Divider(thickness: 2),
 
               const SizedBox(height: 20),
-
-              // Manual Search - Batch/Nama only
               TextField(
                 controller: _searchController,
                 onChanged: (value) {
@@ -227,8 +220,6 @@ class _ScanBarcodeSearchPageState extends State<ScanBarcodeSearchPage> {
               ),
 
               const SizedBox(height: 24),
-
-              // Error Message
               if (_errorMessage != null)
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -243,7 +234,6 @@ class _ScanBarcodeSearchPageState extends State<ScanBarcodeSearchPage> {
                   ),
                 ),
 
-              // Result Card
               if (_foundDrug != null) ...[
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -253,7 +243,7 @@ class _ScanBarcodeSearchPageState extends State<ScanBarcodeSearchPage> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Text(
-                    '✅ Obat ditemukan!',
+                    'Obat ditemukan!',
                     style: TextStyle(color: Colors.green, fontSize: 14),
                   ),
                 ),
@@ -265,7 +255,6 @@ class _ScanBarcodeSearchPageState extends State<ScanBarcodeSearchPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Nama Obat
                         Text(
                           _foundDrug!.nama,
                           style: const TextStyle(
@@ -275,12 +264,9 @@ class _ScanBarcodeSearchPageState extends State<ScanBarcodeSearchPage> {
                           ),
                         ),
                         const SizedBox(height: 16),
-
-                        // Divider
                         const Divider(),
                         const SizedBox(height: 12),
 
-                        // Batch
                         _buildDetailRow(
                           icon: Icons.tag,
                           label: 'Batch',
@@ -290,7 +276,6 @@ class _ScanBarcodeSearchPageState extends State<ScanBarcodeSearchPage> {
                         ),
                         const SizedBox(height: 12),
 
-                        // Exp Date
                         Row(
                           children: [
                             Icon(Icons.event, color: Colors.deepPurple),
@@ -324,7 +309,7 @@ class _ScanBarcodeSearchPageState extends State<ScanBarcodeSearchPage> {
                                     const Padding(
                                       padding: EdgeInsets.only(top: 4),
                                       child: Text(
-                                        '⚠️ KADALUARSA',
+                                        'KADALUARSA',
                                         style: TextStyle(
                                           color: Colors.red,
                                           fontSize: 12,

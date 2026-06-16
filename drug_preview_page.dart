@@ -21,7 +21,6 @@ class _DrugListPageState extends State<DrugListPage> {
     _remainingDrugs = List.from(widget.drugs);
   }
 
-  // Helper: Parse tanggal OCR format DD/MM/YYYY ke DateTime
   DateTime? _parseOCRDate(String dateStr) {
     if (dateStr.isEmpty) return null;
     try {
@@ -38,21 +37,17 @@ class _DrugListPageState extends State<DrugListPage> {
     return null;
   }
 
-  // Helper: Format DateTime ke string DD/MM/YYYY
   String _formatDateToDDMMYYYY(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
-  // Buka form untuk obat yang dipilih
   void _openDrugForm(int index) {
     debugPrint('=== OPENING FORM ===');
-    debugPrint('📝 Index: $index, Remaining drugs: ${_remainingDrugs.length}');
-    debugPrint('📝 Drug name: ${_remainingDrugs[index].nama}');
+    debugPrint('Index: $index, Remaining drugs: ${_remainingDrugs.length}');
+    debugPrint('Drug name: ${_remainingDrugs[index].nama}');
 
     if (index >= _remainingDrugs.length) {
-      debugPrint(
-        '❌ Index $index melebihi list length ${_remainingDrugs.length}',
-      );
+      debugPrint('Index $index melebihi list length ${_remainingDrugs.length}');
       return;
     }
 
@@ -65,40 +60,39 @@ class _DrugListPageState extends State<DrugListPage> {
       ),
     ).then((result) {
       debugPrint('=== FORM CLOSED ===');
-      debugPrint('📤 Result: $result, Mounted: $mounted');
+      debugPrint('Result: $result, Mounted: $mounted');
 
       if (mounted && result == true) {
-        debugPrint('✅ Drug successfully saved: ${drug.nama}');
-        debugPrint('📊 Before: $_savedCount/${widget.drugs.length}');
+        debugPrint('Drug successfully saved: ${drug.nama}');
+        debugPrint('Before: $_savedCount/${widget.drugs.length}');
 
         setState(() {
           _savedCount++;
           _remainingDrugs.removeAt(index);
-          debugPrint('📊 After: $_savedCount/${widget.drugs.length}');
-          debugPrint('📍 Remaining: ${_remainingDrugs.length}');
+          debugPrint('After: $_savedCount/${widget.drugs.length}');
+          debugPrint('Remaining: ${_remainingDrugs.length}');
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✅ Saved ($_savedCount/${widget.drugs.length})'),
+            content: Text('Saved ($_savedCount/${widget.drugs.length})'),
             duration: const Duration(seconds: 1),
             backgroundColor: Colors.green,
           ),
         );
 
-        // Tunggu sebelum check apakah ada obat lagi
         Future.delayed(const Duration(milliseconds: 500), () {
-          debugPrint('🔄 Checking remaining drugs: ${_remainingDrugs.length}');
+          debugPrint('Checking remaining drugs: ${_remainingDrugs.length}');
 
           if (mounted) {
             if (_remainingDrugs.isNotEmpty) {
-              debugPrint('▶️ Next drug available, showing dialog');
+              debugPrint('Next drug available, showing dialog');
               _showNextDrugDialog();
             } else {
-              debugPrint('✨ All drugs finished!');
+              debugPrint('All drugs finished!');
               Future.delayed(const Duration(milliseconds: 500), () {
                 if (mounted) {
-                  debugPrint('🏁 Returning to OCR page');
+                  debugPrint('Returning to OCR page');
                   Navigator.pop(context, true);
                 }
               });
@@ -106,24 +100,23 @@ class _DrugListPageState extends State<DrugListPage> {
           }
         });
       } else {
-        debugPrint('❌ Form cancelled or error');
+        debugPrint('Form cancelled or error');
       }
     });
   }
 
-  // Dialog untuk menampilkan obat berikutnya
   void _showNextDrugDialog() {
     debugPrint(
-      '📢 Showing next drug dialog. Remaining: ${_remainingDrugs.length}',
+      'Showing next drug dialog. Remaining: ${_remainingDrugs.length}',
     );
 
     if (_remainingDrugs.isEmpty) {
-      debugPrint('❌ _remainingDrugs kosong, tidak tampilkan dialog');
+      debugPrint('_remainingDrugs kosong, tidak tampilkan dialog');
       return;
     }
 
     final nextDrug = _remainingDrugs[0];
-    debugPrint('📢 Next drug: ${nextDrug.nama}');
+    debugPrint('Next drug: ${nextDrug.nama}');
 
     showDialog(
       context: context,
@@ -137,19 +130,17 @@ class _DrugListPageState extends State<DrugListPage> {
         actions: [
           TextButton(
             onPressed: () {
-              debugPrint('🛑 User pilih Selesai');
+              debugPrint('User pilih Selesai');
               Navigator.pop(context);
-              Navigator.pop(context, true); // Return ke OCR page
+              Navigator.pop(context, true);
             },
             child: const Text('Selesai'),
           ),
           TextButton(
             onPressed: () {
-              debugPrint('▶️ User pilih Lanjut');
+              debugPrint('User pilih Lanjut');
               Navigator.pop(context);
-              _openDrugForm(
-                0,
-              ); // Buka form untuk obat pertama di list (yang sekarang obat #2 original)
+              _openDrugForm(0);
             },
             child: const Text(
               'Lanjut',
@@ -175,7 +166,6 @@ class _DrugListPageState extends State<DrugListPage> {
       ),
       body: Column(
         children: [
-          // Header dengan progress
           Container(
             color: Colors.deepPurple.withValues(alpha: 0.1),
             padding: const EdgeInsets.all(16),
@@ -208,7 +198,6 @@ class _DrugListPageState extends State<DrugListPage> {
             ),
           ),
 
-          // List obat
           Expanded(
             child: _remainingDrugs.isEmpty
                 ? Center(
@@ -245,7 +234,6 @@ class _DrugListPageState extends State<DrugListPage> {
                         color: isFirst ? Colors.blue[50] : Colors.white,
                         child: Column(
                           children: [
-                            // Header - ListTile
                             ListTile(
                               leading: CircleAvatar(
                                 backgroundColor: Colors.deepPurple,
@@ -289,16 +277,12 @@ class _DrugListPageState extends State<DrugListPage> {
                                   : const Icon(Icons.edit, color: Colors.blue),
                               onTap: () {
                                 if (isFirst) {
-                                  // Obat pertama langsung buka form
                                   _openDrugForm(index);
                                 } else {
-                                  // Obat lain juga buka form (bukan expand)
                                   _openDrugForm(index);
                                 }
                               },
                             ),
-
-                            // Catatan: Obat-obat lain akan langsung buka form saat di-tap
                           ],
                         ),
                       );
@@ -306,7 +290,6 @@ class _DrugListPageState extends State<DrugListPage> {
                   ),
           ),
 
-          // Action buttons
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -314,7 +297,6 @@ class _DrugListPageState extends State<DrugListPage> {
             ),
             child: Row(
               children: [
-                // Cancel button
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () {
@@ -330,8 +312,6 @@ class _DrugListPageState extends State<DrugListPage> {
                   ),
                 ),
                 const SizedBox(width: 12),
-
-                // Start button
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: _remainingDrugs.isEmpty

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'services/grafik_bulanan_service.dart';
 
-/// Format currency to Rupiah with thousand separator
 String formatRupiah(double amount) {
   return 'Rp. ${amount.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
 }
@@ -72,7 +71,6 @@ class _GrafikBulananPageState extends State<GrafikBulananPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // STATISTIK RINGKAS
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -150,8 +148,6 @@ class _GrafikBulananPageState extends State<GrafikBulananPage> {
                         ),
                       ),
                       const SizedBox(height: 24),
-
-                      // GRAFIK BAR CHART
                       Card(
                         elevation: 4,
                         shape: RoundedRectangleBorder(
@@ -268,8 +264,6 @@ class _GrafikBulananPageState extends State<GrafikBulananPage> {
                         ),
                       ),
                       const SizedBox(height: 16),
-
-                      // TABEL DATA
                       Card(
                         elevation: 4,
                         shape: RoundedRectangleBorder(
