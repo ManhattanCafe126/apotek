@@ -5,8 +5,15 @@ import 'services/firestore_service.dart';
 
 class TambahObatPage extends StatefulWidget {
   final DrugData? initialData;
+  final bool isEdit; // Bendera penanda halaman dibuka untuk mode EDIT
+  final String? docId; // ID Dokumen dari Firestore obat yang mau di-edit
 
-  const TambahObatPage({super.key, this.initialData});
+  const TambahObatPage({
+    super.key,
+    this.initialData,
+    this.isEdit = false, // Nilai bawaan/default adalah false (mode tambah baru)
+    this.docId,
+  });
 
   @override
   State<TambahObatPage> createState() => _TambahObatPageState();
@@ -125,21 +132,40 @@ class _TambahObatPageState extends State<TambahObatPage> {
     setState(() => _isSaving = true);
 
     try {
-      final newDrug = DrugData(
+      final updatedDrug = DrugData(
         nama: _namaController.text,
         batch: _batchController.text,
         expDate: _expDateController.text,
         harga: double.tryParse(_hargaController.text) ?? 0.0,
         jumlahStok: int.tryParse(_jumlahStokController.text) ?? 0,
+        barcode: widget.initialData?.barcode ?? '',
       );
 
-      await FirestoreService.tambahObat(newDrug);
+      // JIKA DALAM MODE EDIT
+      if (widget.isEdit) {
+        if (widget.docId == null || widget.docId!.isEmpty) {
+          throw 'ID Dokumen Firestore tidak valid untuk melakukan pembaruan data.';
+        }
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Obat berhasil ditambahkan')),
-        );
-        Navigator.pop(context, true);
+        await FirestoreService.updateObat(widget.docId!, updatedDrug);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Obat berhasil diperbarui')),
+          );
+          Navigator.pop(context, true);
+        }
+      }
+      // JIKA MODE TAMBAH BARU / HASIL SCAN OCR
+      else {
+        await FirestoreService.tambahObat(updatedDrug);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Obat berhasil ditambahkan')),
+          );
+          Navigator.pop(context, true);
+        }
       }
     } catch (e) {
       setState(() => _errorMessage = 'Gagal menyimpan: $e');
@@ -152,7 +178,7 @@ class _TambahObatPageState extends State<TambahObatPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tambah Obat'),
+        title: Text(widget.isEdit ? 'Edit Obat' : 'Tambah Obat'),
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
       ),
@@ -161,7 +187,8 @@ class _TambahObatPageState extends State<TambahObatPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (widget.initialData != null)
+            // Banner bantuan OCR disembunyikan otomatis jika sedang mode Edit
+            if (widget.initialData != null && !widget.isEdit)
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -282,7 +309,11 @@ class _TambahObatPageState extends State<TambahObatPage> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.save),
-              label: Text(_isSaving ? 'Menyimpan...' : 'Simpan Obat'),
+              label: Text(
+                _isSaving
+                    ? 'Menyimpan...'
+                    : (widget.isEdit ? 'Perbarui Obat' : 'Simpan Obat'),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,

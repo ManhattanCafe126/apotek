@@ -534,6 +534,8 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
                                             builder: (context) =>
                                                 TambahObatPage(
                                                   initialData: drug,
+                                                  isEdit: true,
+                                                  docId: docId,
                                                 ),
                                           ),
                                         );

@@ -121,12 +121,14 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
         children: [
           Icon(icon, size: 14, color: Colors.white),
           const SizedBox(width: 4),
-          Text(
-            rekomendasi.split(' - ')[0],
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 11,
+          Flexible(
+            child: Text(
+              rekomendasi.split(' - ')[0],
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+              ),
             ),
           ),
         ],
@@ -246,9 +248,11 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
                                     : Colors.grey,
                               ),
                               const SizedBox(width: 4),
-                              Text(
-                                '${analisis.getTrenLabel()} • Stok: ${analisis.stokTerkini}',
-                                style: const TextStyle(fontSize: 12),
+                              Expanded(
+                                child: Text(
+                                  '${analisis.getTrenLabel()} • Stok: ${analisis.stokTerkini}',
+                                  style: const TextStyle(fontSize: 12),
+                                ),
                               ),
                             ],
                           ),
