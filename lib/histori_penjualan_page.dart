@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'models/penjualan_model.dart';
-import 'services/firestore_service.dart';
+import 'services/layanan_firestore.dart';
 
 String formatRupiah(double amount) {
   return 'Rp. ${amount.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
@@ -87,7 +87,7 @@ class _HistoriPenjualanPageState extends State<HistoriPenjualanPage> {
     final data = doc.data() as Map<String, dynamic>;
     final itemsList = (data['items'] as List?) ?? [];
     final items = itemsList
-        .map((item) => SalesItem.fromMap(item as Map<String, dynamic>))
+        .map((item) => ItemPenjualan.dariMap(item as Map<String, dynamic>))
         .toList();
 
     showDialog(
@@ -211,7 +211,7 @@ class _HistoriPenjualanPageState extends State<HistoriPenjualanPage> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirestoreService.streamPenjualan(),
+              stream: LayananFirestore.streamPenjualan(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return const SizedBox.shrink();
@@ -259,7 +259,7 @@ class _HistoriPenjualanPageState extends State<HistoriPenjualanPage> {
           ),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirestoreService.streamPenjualan(),
+              stream: LayananFirestore.streamPenjualan(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());

@@ -42,7 +42,7 @@ Tugas:
     );
 
     if (response.statusCode != 200) {
-      return "LiteLLM Error ${response.statusCode}:\n${response.body}";
+      return "❌ LiteLLM Error ${response.statusCode}:\n${response.body}";
     }
 
     final json = jsonDecode(response.body);
@@ -115,7 +115,6 @@ ATURAN KETAT:
     final json = jsonDecode(response.body);
     String rawContent = json['choices'][0]['message']['content'];
 
-    // Bersihkan response dari markdown atau karakter extra
     rawContent = rawContent.trim();
     if (rawContent.startsWith('```')) {
       rawContent = rawContent.replaceAll(RegExp(r'^```(json)?\n?'), '');
@@ -126,24 +125,11 @@ ATURAN KETAT:
     return rawContent;
   }
 
-  // ==================================================
-  // 3️⃣ REKOMENDASI PEMBELIAN (JSON TERKUNCI)
-  // ==================================================
   static Future<String> generateRekomendasi(String dataPenjualan) async {
     final prompt =
         '''
-Anda adalah sistem analis pengadaan apotek.
-
-Data penjualan obat:
 $dataPenjualan
 
-ATURAN WAJIB:
-- Output HARUS JSON VALID
-- JANGAN gunakan markdown
-- JANGAN tambahkan teks di luar JSON
-- Gunakan Bahasa Indonesia
-
-FORMAT JSON WAJIB:
 {
   "restock": [
     {
@@ -174,7 +160,7 @@ FORMAT JSON WAJIB:
           {
             "role": "system",
             "content":
-                "Anda adalah analis pengadaan apotek yang hanya mengeluarkan JSON.",
+                "",
           },
           {"role": "user", "content": prompt},
         ],

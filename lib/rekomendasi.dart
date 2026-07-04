@@ -28,8 +28,7 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
 
       if (obatNames.isEmpty) {
         setState(() {
-          _errorMessage =
-              'Belum ada data penjualan. Catat penjualan terlebih dahulu.';
+          _errorMessage = 'Belum ada data penjualan. Catat penjualan terlebih dahulu.';
           _isLoading = false;
         });
         return;
@@ -56,23 +55,19 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
       await FirestoreService.simpanRekomendasi(
         restock: hasil
             .where((a) => a.getRekomendasi().startsWith('Beli'))
-            .map(
-              (a) => RestockItem(
-                nama: a.namaObat,
-                saran: 'Beli',
-                jumlah: _calculateRestockAmount(a),
-                alasan: a.getRekomendasi(),
-              ),
-            )
+            .map((a) => RestockItem(
+              nama: a.namaObat,
+              saran: 'Beli',
+              jumlah: _calculateRestockAmount(a),
+              alasan: a.getRekomendasi(),
+            ))
             .toList(),
         tidakRestock: hasil
             .where((a) => !a.getRekomendasi().startsWith('Beli'))
-            .map(
-              (a) => TidakRestockItem(
-                nama: a.namaObat,
-                alasan: a.getRekomendasi(),
-              ),
-            )
+            .map((a) => TidakRestockItem(
+              nama: a.namaObat,
+              alasan: a.getRekomendasi(),
+            ))
             .toList(),
       );
     } catch (e) {
@@ -121,15 +116,9 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
         children: [
           Icon(icon, size: 14, color: Colors.white),
           const SizedBox(width: 4),
-          Flexible(
-            child: Text(
-              rekomendasi.split(' - ')[0],
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 11,
-              ),
-            ),
+          Text(
+            rekomendasi.split(' - ')[0],
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
           ),
         ],
       ),
@@ -157,7 +146,7 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Text(
-                'Smart Rekomendasi berdasarkan TREN PENJUALAN, STOK, dan FEFO',
+                'Smart Rekomendasi berdasarkan TREN PENJUALAN, STOK, dan FEFO (First Expiry First Out)',
                 style: TextStyle(fontSize: 12, color: Colors.blue),
               ),
             ),
@@ -165,11 +154,7 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
             ElevatedButton.icon(
               onPressed: _isLoading ? null : _analisisOtomatis,
               icon: _isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Icons.auto_graph),
               label: Text(_isLoading ? 'Menganalisis...' : 'Jalankan Analisis'),
               style: ElevatedButton.styleFrom(
@@ -187,10 +172,7 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
                   border: Border.all(color: Colors.red),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(
-                  _errorMessage!,
-                  style: const TextStyle(color: Colors.red, fontSize: 12),
-                ),
+                child: Text(_errorMessage!, style: const TextStyle(color: Colors.red, fontSize: 12)),
               ),
             const SizedBox(height: 16),
             if (!_isLoading && _analisisList.isEmpty)
@@ -201,11 +183,7 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
                     children: const [
                       Icon(Icons.info, size: 48, color: Colors.grey),
                       SizedBox(height: 16),
-                      Text(
-                        'Tekan tombol di atas untuk memulai analisis.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey),
-                      ),
+                      Text('Tekan tombol di atas untuk memulai analisis.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
                     ],
                   ),
                 ),
@@ -223,36 +201,20 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
                       elevation: 2,
                       child: ExpansionTile(
                         leading: _buildStatusBadge(rekomendasi),
-                        title: Text(
-                          analisis.namaObat,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
+                        title: Text(analisis.namaObat, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                         subtitle: Padding(
                           padding: const EdgeInsets.only(top: 8.0),
                           child: Row(
                             children: [
                               Icon(
-                                analisis.tren > 0.2
-                                    ? Icons.trending_up
-                                    : analisis.tren < -0.2
-                                    ? Icons.trending_down
-                                    : Icons.trending_flat,
+                                analisis.tren > 0.2 ? Icons.trending_up : analisis.tren < -0.2 ? Icons.trending_down : Icons.trending_flat,
                                 size: 16,
-                                color: analisis.tren > 0.2
-                                    ? Colors.green
-                                    : analisis.tren < -0.2
-                                    ? Colors.red
-                                    : Colors.grey,
+                                color: analisis.tren > 0.2 ? Colors.green : analisis.tren < -0.2 ? Colors.red : Colors.grey,
                               ),
                               const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  '${analisis.getTrenLabel()} • Stok: ${analisis.stokTerkini}',
-                                  style: const TextStyle(fontSize: 12),
-                                ),
+                              Text(
+                                '${analisis.getTrenLabel()} • Stok: ${analisis.stokTerkini}',
+                                style: const TextStyle(fontSize: 12),
                               ),
                             ],
                           ),
@@ -263,39 +225,17 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildInfoRow(
-                                  'Penjualan Bulan Ini:',
-                                  '${analisis.totalPenjualanBulanIni} unit',
-                                ),
+                                _buildInfoRow('Penjualan Bulan Ini:', '${analisis.totalPenjualanBulanIni} unit'),
                                 const SizedBox(height: 10),
-                                _buildInfoRow(
-                                  'Penjualan Bulan Lalu:',
-                                  '${analisis.totalPenjualanBulanLalu} unit',
-                                ),
+                                _buildInfoRow('Penjualan Bulan Lalu:', '${analisis.totalPenjualanBulanLalu} unit'),
                                 const SizedBox(height: 10),
-                                _buildInfoRow(
-                                  'Stok Terkini:',
-                                  '${analisis.stokTerkini} unit',
-                                  color: analisis.stokTerkini < 10
-                                      ? Colors.red
-                                      : Colors.green,
-                                ),
+                                _buildInfoRow('Stok Terkini:', '${analisis.stokTerkini} unit',
+                                    color: analisis.stokTerkini < 10 ? Colors.red : Colors.green),
                                 const SizedBox(height: 10),
-                                _buildInfoRow(
-                                  'Tren Perubahan:',
-                                  '${(analisis.tren * 100).toStringAsFixed(0)}%',
-                                  color: analisis.tren > 0
-                                      ? Colors.green
-                                      : Colors.red,
-                                ),
+                                _buildInfoRow('Tren Perubahan:', '${(analisis.tren * 100).toStringAsFixed(0)}%',
+                                    color: analisis.tren > 0 ? Colors.green : Colors.red),
                                 const Divider(height: 20),
-                                const Text(
-                                  'REKOMENDASI:',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13,
-                                  ),
-                                ),
+                                const Text('💡 REKOMENDASI:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                                 const SizedBox(height: 8),
                                 Container(
                                   width: double.infinity,
@@ -305,13 +245,7 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(color: Colors.amber),
                                   ),
-                                  child: Text(
-                                    rekomendasi,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 13,
-                                    ),
-                                  ),
+                                  child: Text(rekomendasi, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
                                 ),
                               ],
                             ),
@@ -332,19 +266,10 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
-            color: color,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12)),
+        Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: color)),
       ],
     );
   }
 }
+

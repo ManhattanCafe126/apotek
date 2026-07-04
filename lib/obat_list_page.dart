@@ -240,8 +240,6 @@ class _ObatListPageState extends State<ObatListPage> {
 
                 final docs = snapshot.data!.docs;
                 final filteredDocs = _filterAndSortDrugs(docs);
-
-                // Tampilkan pesan jika hasil search kosong
                 if (filteredDocs.isEmpty && _searchQuery.isNotEmpty) {
                   return Center(
                     child: Column(

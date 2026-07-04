@@ -323,8 +323,6 @@ class _ScanBarcodeSearchPageState extends State<ScanBarcodeSearchPage> {
                           ],
                         ),
                         const SizedBox(height: 12),
-
-                        // Harga
                         _buildDetailRow(
                           icon: Icons.attach_money,
                           label: 'Harga',
@@ -334,8 +332,6 @@ class _ScanBarcodeSearchPageState extends State<ScanBarcodeSearchPage> {
                           valueColor: Colors.green,
                         ),
                         const SizedBox(height: 12),
-
-                        // Stok
                         _buildDetailRow(
                           icon: Icons.inventory,
                           label: 'Stok',
@@ -351,8 +347,6 @@ class _ScanBarcodeSearchPageState extends State<ScanBarcodeSearchPage> {
               ],
 
               const SizedBox(height: 24),
-
-              // Empty State
               if (_foundDrug == null && _scannedBarcode.isEmpty)
                 Center(
                   child: Column(

@@ -11,9 +11,8 @@ class LaporanKadarluarsaPage extends StatefulWidget {
 }
 
 class _LaporanKadarluarsaPageState extends State<LaporanKadarluarsaPage> {
-  String _selectedFilter = 'all'; // 'all', 'waspada', 'aman', 'kadaluarsa'
+  String _selectedFilter = 'all'; 
 
-  /// Build filter buttons
   Widget _buildFilterButtons() {
     final filters = [
       {'key': 'all', 'label': 'Semua', 'icon': Icons.list},
@@ -69,7 +68,6 @@ class _LaporanKadarluarsaPageState extends State<LaporanKadarluarsaPage> {
     );
   }
 
-  /// Build summary cards
   Widget _buildSummaryCards(Map<String, int> statusCounts) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -97,7 +95,6 @@ class _LaporanKadarluarsaPageState extends State<LaporanKadarluarsaPage> {
     );
   }
 
-  /// Build individual summary card
   Widget _buildSummaryCard(String title, int count, Color color) {
     return Expanded(
       child: Container(
@@ -129,7 +126,6 @@ class _LaporanKadarluarsaPageState extends State<LaporanKadarluarsaPage> {
     );
   }
 
-  /// Build drug list
   Widget _buildDrugList() {
     return Expanded(
       child: StreamBuilder<QuerySnapshot>(
@@ -155,7 +151,6 @@ class _LaporanKadarluarsaPageState extends State<LaporanKadarluarsaPage> {
             );
           }
 
-          // Process and filter drugs
           final drugs = <Map<String, dynamic>>[];
           final statusCounts = {'kadaluarsa': 0, 'waspada': 0, 'aman': 0};
 
@@ -164,7 +159,6 @@ class _LaporanKadarluarsaPageState extends State<LaporanKadarluarsaPage> {
             final expDate = data['exp_date'] ?? '';
             final status = ExpiryUtils.getExpiryStatus(expDate);
 
-            // Count by status
             if (status == 'Kadaluarsa') {
               statusCounts['kadaluarsa'] =
                   (statusCounts['kadaluarsa'] ?? 0) + 1;
@@ -174,7 +168,6 @@ class _LaporanKadarluarsaPageState extends State<LaporanKadarluarsaPage> {
               statusCounts['aman'] = (statusCounts['aman'] ?? 0) + 1;
             }
 
-            // Filter based on selection
             if (_selectedFilter == 'all' ||
                 _selectedFilter == status.toLowerCase()) {
               drugs.add({
@@ -186,7 +179,6 @@ class _LaporanKadarluarsaPageState extends State<LaporanKadarluarsaPage> {
             }
           }
 
-          // Sort by days left (FEFO principle)
           drugs.sort(
             (a, b) => (a['daysLeft'] as int).compareTo(b['daysLeft'] as int),
           );
@@ -224,7 +216,6 @@ class _LaporanKadarluarsaPageState extends State<LaporanKadarluarsaPage> {
     );
   }
 
-  /// Build individual drug card
   Widget _buildDrugCard(Map<String, dynamic> drug) {
     final status = drug['status'] as String;
     final color = ExpiryUtils.getStatusColor(status);
@@ -312,7 +303,6 @@ class _LaporanKadarluarsaPageState extends State<LaporanKadarluarsaPage> {
     );
   }
 
-  /// Get color for filter
   Color _getFilterColor(String filter) {
     switch (filter) {
       case 'kadaluarsa':

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'services/firestore_service.dart';
+import 'services/layanan_firestore.dart';
 
 class StockOpnamePage extends StatefulWidget {
   const StockOpnamePage({super.key});
@@ -42,7 +42,7 @@ class _StockOpnamePageState extends State<StockOpnamePage> {
           ),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirestoreService.streamStokRealtime(),
+              stream: LayananFirestore.streamStokRealtime(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -356,7 +356,7 @@ class _StockOpnamePageState extends State<StockOpnamePage> {
               }
 
               try {
-                await FirestoreService.tambahStok(nama, batch, jumlah);
+                await LayananFirestore.tambahStok(nama, batch, jumlah);
                 if (mounted) {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(

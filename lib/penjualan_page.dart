@@ -5,7 +5,6 @@ import 'models/drug_model.dart';
 import 'models/penjualan_model.dart';
 import 'services/firestore_service.dart';
 
-/// Format currency to Rupiah with thousand separator
 String formatRupiah(double amount) {
   return 'Rp. ${amount.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
 }
@@ -28,7 +27,6 @@ class _PenjualanPageState extends State<PenjualanPage> {
     super.dispose();
   }
 
-  /// Scan barcode dan cari obat
   Future<void> _scanBarcode() async {
     if (_isScanning) return;
 
@@ -62,7 +60,6 @@ class _PenjualanPageState extends State<PenjualanPage> {
     }
   }
 
-  /// Cari obat berdasarkan barcode
   Future<void> _searchDrugByBarcode(String barcode) async {
     try {
       final snapshot = await FirebaseFirestore.instance
@@ -93,9 +90,9 @@ class _PenjualanPageState extends State<PenjualanPage> {
         _addToCart(foundDrug);
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Obat tidak ditemukan')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Obat tidak ditemukan')),
+          );
         }
       }
     } catch (e) {
@@ -108,7 +105,6 @@ class _PenjualanPageState extends State<PenjualanPage> {
     }
   }
 
-  /// Cari obat berdasarkan nama
   Future<void> _searchDrugByName(String nama) async {
     if (nama.isEmpty) {
       ScaffoldMessenger.of(
@@ -137,9 +133,9 @@ class _PenjualanPageState extends State<PenjualanPage> {
 
       if (results.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Obat tidak ditemukan')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Obat tidak ditemukan')),
+          );
         }
         return;
       }
@@ -157,7 +153,6 @@ class _PenjualanPageState extends State<PenjualanPage> {
     }
   }
 
-  /// Tampilkan dialog hasil pencarian
   void _showSearchResultsDialog(List<DocumentSnapshot> results) {
     showDialog(
       context: context,
@@ -194,7 +189,6 @@ class _PenjualanPageState extends State<PenjualanPage> {
     );
   }
 
-  /// Tambah ke keranjang (atau update qty jika sudah ada)
   void _addToCart(DrugData drug) {
     setState(() {
       final existingIndex = _cartItems.indexWhere(
@@ -206,7 +200,6 @@ class _PenjualanPageState extends State<PenjualanPage> {
         newQuantity = _cartItems[existingIndex].jumlah + 1;
       }
 
-      // Validasi stok
       if (newQuantity > drug.jumlahStok) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -220,7 +213,6 @@ class _PenjualanPageState extends State<PenjualanPage> {
       }
 
       if (existingIndex >= 0) {
-        // Jika sudah ada, tambah kuantitas
         final existing = _cartItems[existingIndex];
         _cartItems[existingIndex] = SalesItem(
           drugId: existing.drugId,
@@ -230,10 +222,9 @@ class _PenjualanPageState extends State<PenjualanPage> {
           jumlah: newQuantity,
         );
       } else {
-        // Jika belum ada, tambah item baru
         _cartItems.add(
           SalesItem(
-            drugId: '', // Could be enhanced with drug ID from DB
+            drugId: '',
             nama: drug.nama,
             batch: drug.batch,
             harga: drug.harga,
@@ -244,11 +235,10 @@ class _PenjualanPageState extends State<PenjualanPage> {
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${drug.nama} ditambahkan ke keranjang')),
+      SnackBar(content: Text('✅ ${drug.nama} ditambahkan ke keranjang')),
     );
   }
 
-  /// Update kuantitas item dengan stock validation
   void _updateQuantity(int index, int newQuantity) {
     if (newQuantity <= 0) {
       _removeItem(index);
@@ -257,7 +247,6 @@ class _PenjualanPageState extends State<PenjualanPage> {
 
     final item = _cartItems[index];
 
-    // Query stok terkini dari Firestore
     FirebaseFirestore.instance
         .collection('obat')
         .where('nama', isEqualTo: item.nama)
@@ -273,7 +262,9 @@ class _PenjualanPageState extends State<PenjualanPage> {
           if (newQuantity > currentStock) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Stok tidak cukup. Stok tersedia: $currentStock'),
+                content: Text(
+                  'Stok tidak cukup. Stok tersedia: $currentStock',
+                ),
                 backgroundColor: Colors.red,
               ),
             );
@@ -292,7 +283,6 @@ class _PenjualanPageState extends State<PenjualanPage> {
         });
   }
 
-  /// Hapus item dari keranjang
   void _removeItem(int index) {
     setState(() {
       _cartItems.removeAt(index);
@@ -302,12 +292,10 @@ class _PenjualanPageState extends State<PenjualanPage> {
     );
   }
 
-  /// Hitung total
   double get _total {
     return _cartItems.fold(0, (sum, item) => sum + item.subtotal);
   }
 
-  /// Tampilkan dialog konfirmasi penjualan
   void _showConfirmationDialog() {
     showDialog(
       context: context,
@@ -352,11 +340,10 @@ class _PenjualanPageState extends State<PenjualanPage> {
     );
   }
 
-  /// Simpan penjualan ke Firestore
   Future<void> _saveSaleToFirestore() async {
     try {
       final penjualan = Penjualan(
-        id: '', // Firestore akan generate ID
+        id: '', 
         items: _cartItems,
         createdAt: Timestamp.now(),
       );
@@ -388,7 +375,6 @@ class _PenjualanPageState extends State<PenjualanPage> {
     }
   }
 
-  /// Tampilkan menu tambah obat
   void _showAddMenuDialog() {
     showDialog(
       context: context,
@@ -430,7 +416,6 @@ class _PenjualanPageState extends State<PenjualanPage> {
     );
   }
 
-  /// Dialog untuk mencari nama obat
   void _showSearchDialog() {
     showDialog(
       context: context,
@@ -472,7 +457,6 @@ class _PenjualanPageState extends State<PenjualanPage> {
       ),
       body: Column(
         children: [
-          // Tombol Tambah Obat
           Padding(
             padding: const EdgeInsets.all(12),
             child: ElevatedButton.icon(
@@ -487,14 +471,12 @@ class _PenjualanPageState extends State<PenjualanPage> {
             ),
           ),
 
-          // Loading indicator
           if (_isScanning)
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 12),
               child: LinearProgressIndicator(),
             ),
 
-          // Keranjang belanja
           Expanded(
             child: _cartItems.isEmpty
                 ? Center(
@@ -639,7 +621,6 @@ class _PenjualanPageState extends State<PenjualanPage> {
                   ),
           ),
 
-          // Total dan tombol konfirmasi
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(

@@ -15,8 +15,8 @@ class ManajemenObatPage extends StatefulWidget {
 
 class _ManajemenObatPageState extends State<ManajemenObatPage> {
   final TextEditingController _searchController = TextEditingController();
-  String _filterStatus = 'semua'; // semua, kritis, rendah, normal
-  String _filterExpDate = 'semua'; // semua, terlama, terbaru
+  String _filterStatus = 'semua'; 
+  String _filterExpDate = 'semua'; 
   String _searchQuery = '';
 
   @override
@@ -48,9 +48,9 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error scanning: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error scanning: $e')),
+        );
       }
     }
   }
@@ -82,7 +82,6 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
   }
 
   List<DocumentSnapshot> _filterAndSortDrugs(List<DocumentSnapshot> docs) {
-    // Filter berdasarkan search query
     List<DocumentSnapshot> filtered = docs.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
       final nama = (data['nama'] ?? '').toString().toLowerCase();
@@ -92,7 +91,6 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
           batch.contains(_searchQuery.toLowerCase());
     }).toList();
 
-    // Filter berdasarkan status stok
     filtered = filtered.where((doc) {
       final stok = (doc['jumlah_stok'] ?? 0) as num;
       switch (_filterStatus) {
@@ -107,7 +105,6 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
       }
     }).toList();
 
-    // Filter berdasarkan exp_date
     if (_filterExpDate == 'terlama') {
       filtered.sort((a, b) {
         final dateA = _parseExpDate(
@@ -116,7 +113,7 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
         final dateB = _parseExpDate(
           (b.data() as Map<String, dynamic>)['exp_date'] ?? '',
         );
-        return dateB.compareTo(dateA); // Terlama = exp date paling jauh
+        return dateB.compareTo(dateA); 
       });
     } else if (_filterExpDate == 'terbaru') {
       filtered.sort((a, b) {
@@ -126,7 +123,7 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
         final dateB = _parseExpDate(
           (b.data() as Map<String, dynamic>)['exp_date'] ?? '',
         );
-        return dateA.compareTo(dateB); // Terbaru = exp date paling dekat
+        return dateA.compareTo(dateB);
       });
     }
 
@@ -167,7 +164,6 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
       ),
       body: Column(
         children: [
-          // Search Bar with Barcode Scanner
           Padding(
             padding: const EdgeInsets.all(12),
             child: TextField(
@@ -202,7 +198,6 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
             ),
           ),
 
-          // Filter Status Stok
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Column(
@@ -237,7 +232,6 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
 
           const SizedBox(height: 8),
 
-          // Filter Exp Date
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Column(
@@ -270,7 +264,6 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
 
           const SizedBox(height: 12),
 
-          // Obat List
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -343,7 +336,6 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
                     final harga = (data['harga'] ?? 0) as num;
                     final isExpired = _isExpired(expDate);
 
-                    // Tentukan warna dan badge berdasarkan stok
                     Color statusColor;
                     String statusText;
                     if (stok < 5) {
@@ -534,8 +526,6 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
                                             builder: (context) =>
                                                 TambahObatPage(
                                                   initialData: drug,
-                                                  isEdit: true,
-                                                  docId: docId,
                                                 ),
                                           ),
                                         );
@@ -653,7 +643,9 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
               if (jumlah == null || jumlah <= 0) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Masukkan jumlah yang valid')),
+                    const SnackBar(
+                      content: Text('Masukkan jumlah yang valid'),
+                    ),
                   );
                 }
                 return;
@@ -671,7 +663,7 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
                   final docRef = snapshot.docs.first.reference;
                   final currentStok =
                       (snapshot.docs.first['jumlah_stok'] as num?)?.toInt() ??
-                      0;
+                          0;
                   final newStok = currentStok + jumlah;
 
                   await docRef.update({'jumlah_stok': newStok});
@@ -692,7 +684,7 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          'Stok $nama ditambah $jumlah unit (Total: $newStok)',
+                          '✅ Stok $nama ditambah $jumlah unit (Total: $newStok)',
                         ),
                         backgroundColor: Colors.green,
                       ),
@@ -701,9 +693,9 @@ class _ManajemenObatPageState extends State<ManajemenObatPage> {
                 }
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: $e')),
+                  );
                 }
               }
             },

@@ -56,7 +56,7 @@ class _RisetMLKitPageState extends State<RisetMLKitPage> {
 
       if (res != null && res != '-1' && res.isNotEmpty) {
         setState(() {
-          _hasilScan = "Hasil Barcode:\n$res";
+          _hasilScan = "📦 Hasil Barcode:\n$res";
           _imageFile = null;
         });
       } else {
@@ -93,7 +93,7 @@ class _RisetMLKitPageState extends State<RisetMLKitPage> {
       final teksMentah = recognizedText.text;
 
       String hasilAwal =
-          "Teks Terdeteksi:\n$teksMentah\n\n--- ANALISIS DASAR ---";
+          "📝 Teks Terdeteksi:\n$teksMentah\n\n--- ANALISIS DASAR ---";
 
       if (teksMentah.toUpperCase().contains("EXP") ||
           teksMentah.toUpperCase().contains("ED") ||
@@ -118,22 +118,19 @@ class _RisetMLKitPageState extends State<RisetMLKitPage> {
     setState(() {
       _isAnalyzingAI = true;
       _extractedDrugs = [];
-      _hasilScan += "\n\n Menganalisis dengan AI...";
+      _hasilScan += "\n\n🤖 Menganalisis dengan AI...";
     });
 
     try {
-      // Ekstrak data obat dari OCR
       final hasilAI = await OpenAIService.ekstrakDataObatDariOCR(inputTeks);
 
       debugPrint('Raw AI Response: $hasilAI');
 
-      // Parse JSON response - expect ARRAY
       dynamic parsedData = jsonDecode(hasilAI);
       debugPrint('Parsed Type: ${parsedData.runtimeType}');
 
       List<DrugData> drugsList = [];
 
-      // Handle array response
       if (parsedData is List) {
         debugPrint('Response is List with ${parsedData.length} items');
         for (int i = 0; i < parsedData.length; i++) {
@@ -151,7 +148,6 @@ class _RisetMLKitPageState extends State<RisetMLKitPage> {
           }
         }
       }
-      // Fallback: if single object returned
       else if (parsedData is Map<String, dynamic>) {
         debugPrint('Response is single Map (fallback)');
         try {
@@ -162,9 +158,7 @@ class _RisetMLKitPageState extends State<RisetMLKitPage> {
           debugPrint('Error parsing single drug: $e');
         }
       } else {
-        throw Exception(
-          'Format JSON tidak dikenali: ${parsedData.runtimeType}',
-        );
+        throw Exception('Format JSON tidak dikenali: ${parsedData.runtimeType}');
       }
 
       if (drugsList.isEmpty) {
@@ -201,7 +195,6 @@ class _RisetMLKitPageState extends State<RisetMLKitPage> {
     }
   }
 
-  // Navigate ke list page dengan multiple drugs
   void _navigateToPreview() {
     if (_extractedDrugs.isEmpty) return;
 
@@ -212,14 +205,12 @@ class _RisetMLKitPageState extends State<RisetMLKitPage> {
       ),
     ).then((result) {
       if (result == true && mounted) {
-        // Success - drugs were saved
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Semua obat berhasil ditambahkan ke database'),
+            content: Text('✅ Semua obat berhasil ditambahkan ke database'),
             duration: Duration(seconds: 2),
           ),
         );
-        // Reset form
         setState(() {
           _hasilScan = "Belum ada data yang discan.";
           _imageFile = null;
@@ -228,8 +219,6 @@ class _RisetMLKitPageState extends State<RisetMLKitPage> {
       }
     });
   }
-
-  // ================= UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -241,7 +230,6 @@ class _RisetMLKitPageState extends State<RisetMLKitPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Preview Gambar OCR
             Container(
               height: 250,
               width: double.infinity,
@@ -301,22 +289,15 @@ class _RisetMLKitPageState extends State<RisetMLKitPage> {
               ),
             ),
 
-            // BUTTON: LANJUT KE DAFTAR OBAT (Muncul jika data berhasil diextract)
             if (_extractedDrugs.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 16,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 child: ElevatedButton.icon(
                   onPressed: _navigateToPreview,
                   icon: const Icon(Icons.list),
                   label: Text(
                     "Lihat Daftar Obat (${_extractedDrugs.length} ditemukan)",
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,

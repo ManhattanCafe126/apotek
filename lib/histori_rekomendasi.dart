@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'services/firestore_service.dart';
+import 'services/layanan_firestore.dart';
 
 class HistoriRekomendasiPage extends StatelessWidget {
   const HistoriRekomendasiPage({super.key});
@@ -14,7 +14,7 @@ class HistoriRekomendasiPage extends StatelessWidget {
         foregroundColor: Colors.white,
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirestoreService.streamHistori(),
+        stream: LayananFirestore.streamHistori(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());

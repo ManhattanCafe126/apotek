@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'models/model_obat.dart';
 import 'tambah_obat_page.dart';
 
-class DrugListPage extends StatefulWidget {
+class HalamanDaftarObat extends StatefulWidget {
   final List<DataObat> drugs;
 
-  const DrugListPage({required this.drugs, super.key});
+  const HalamanDaftarObat({required this.drugs, super.key});
 
   @override
-  State<DrugListPage> createState() => _DrugListPageState();
+  State<HalamanDaftarObat> createState() => _HalamanDaftarObatState();
 }
 
-class _DrugListPageState extends State<DrugListPage> {
+class _HalamanDaftarObatState extends State<HalamanDaftarObat> {
   late List<DataObat> _remainingDrugs;
   int _savedCount = 0;
 
@@ -21,7 +21,7 @@ class _DrugListPageState extends State<DrugListPage> {
     _remainingDrugs = List.from(widget.drugs);
   }
 
-  DateTime? _parseOCRDate(String dateStr) {
+  DateTime? _parsirTanggalOCR(String dateStr) {
     if (dateStr.isEmpty) return null;
     try {
       final parts = dateStr.split('/');
@@ -37,11 +37,11 @@ class _DrugListPageState extends State<DrugListPage> {
     return null;
   }
 
-  String _formatDateToDDMMYYYY(DateTime date) {
+  String _formatTanggalKeDDMMTTTT(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
-  void _openDrugForm(int index) {
+  void _bukaTampilObat(int index) {
     debugPrint('=== OPENING FORM ===');
     debugPrint('📝 Index: $index, Remaining drugs: ${_remainingDrugs.length}');
     debugPrint('📝 Drug name: ${_remainingDrugs[index].nama}');
@@ -87,7 +87,7 @@ class _DrugListPageState extends State<DrugListPage> {
           if (mounted) {
             if (_remainingDrugs.isNotEmpty) {
               debugPrint('Next drug available, showing dialog');
-              _showNextDrugDialog();
+              _tampilDialogObatBerikutnya();
             } else {
               debugPrint('All drugs finished!');
               Future.delayed(const Duration(milliseconds: 500), () {
@@ -105,7 +105,7 @@ class _DrugListPageState extends State<DrugListPage> {
     });
   }
 
-  void _showNextDrugDialog() {
+  void _tampilDialogObatBerikutnya() {
     debugPrint(
       'Showing next drug dialog. Remaining: ${_remainingDrugs.length}',
     );
@@ -140,7 +140,7 @@ class _DrugListPageState extends State<DrugListPage> {
             onPressed: () {
               debugPrint('▶️ User pilih Lanjut');
               Navigator.pop(context);
-              _openDrugForm(0);
+              _bukaTampilObat(0);
             },
             child: const Text(
               'Lanjut',
@@ -277,9 +277,9 @@ class _DrugListPageState extends State<DrugListPage> {
                                   : const Icon(Icons.edit, color: Colors.blue),
                               onTap: () {
                                 if (isFirst) {
-                                  _openDrugForm(index);
+                                  _bukaTampilObat(index);
                                 } else {
-                                  _openDrugForm(index);
+                                  _bukaTampilObat(index);
                                 }
                               },
                             ),
@@ -316,7 +316,7 @@ class _DrugListPageState extends State<DrugListPage> {
                   child: ElevatedButton.icon(
                     onPressed: _remainingDrugs.isEmpty
                         ? null
-                        : () => _openDrugForm(0),
+                        : () => _bukaTampilObat(0),
                     icon: const Icon(Icons.edit),
                     label: Text(
                       _remainingDrugs.isEmpty

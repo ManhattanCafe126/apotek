@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:ocr/firebase_options.dart';
+import 'package:ocr/opsi_firebase.dart';
 import 'riset_mlkit.dart';
 import 'rekomendasi.dart';
 import 'histori_rekomendasi.dart';
 import 'grafik_bulanan_page.dart';
-import 'stock_opname_page.dart';
 import 'tambah_obat_page.dart';
 import 'manajemen_obat_page.dart';
 import 'penjualan_page.dart';
@@ -16,9 +15,9 @@ import 'laporan_kadarluarsa_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(options: OpsiFirebaseDefault.currentPlatform);
 
-  // Login anonymous untuk akses Firestore
+  //Login anonymous untuk akses Firestore
   try {
     await FirebaseAuth.instance.signInAnonymously();
     debugPrint('Anonymous login berhasil');
@@ -26,11 +25,11 @@ void main() async {
     debugPrint('Anonymous login gagal: $e');
   }
 
-  runApp(const MyApp());
+  runApp(const AplikasiUtama());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class AplikasiUtama extends StatelessWidget {
+  const AplikasiUtama({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -46,14 +45,13 @@ class MyApp extends StatelessWidget {
   }
 }
 
-/// Reusable Menu Card Widget
-class MenuCard extends StatefulWidget {
+class KartuMenu extends StatefulWidget {
   final String title;
   final IconData icon;
   final Color backgroundColor;
   final VoidCallback onTap;
 
-  const MenuCard({
+  const KartuMenu({
     super.key,
     required this.title,
     required this.icon,
@@ -62,10 +60,10 @@ class MenuCard extends StatefulWidget {
   });
 
   @override
-  State<MenuCard> createState() => _MenuCardState();
+  State<KartuMenu> createState() => _KartuMenuState();
 }
 
-class _MenuCardState extends State<MenuCard> {
+class _KartuMenuState extends State<KartuMenu> {
   bool _isHovered = false;
 
   @override
@@ -125,14 +123,13 @@ class _MenuCardState extends State<MenuCard> {
   }
 }
 
-/// Menu Category Section Widget
-class MenuCategorySection extends StatelessWidget {
+class BagianKategoriMenu extends StatelessWidget {
   final String categoryTitle;
   final IconData categoryIcon;
   final Color categoryColor;
-  final List<MenuItemData> items;
+  final List<DataItemMenu> items;
 
-  const MenuCategorySection({
+  const BagianKategoriMenu({
     super.key,
     required this.categoryTitle,
     required this.categoryIcon,
@@ -183,7 +180,7 @@ class MenuCategorySection extends StatelessWidget {
           itemCount: items.length,
           itemBuilder: (context, index) {
             final item = items[index];
-            return MenuCard(
+            return KartuMenu(
               title: item.title,
               icon: item.icon,
               backgroundColor: item.color,
@@ -196,14 +193,13 @@ class MenuCategorySection extends StatelessWidget {
   }
 }
 
-/// Menu Item Data Model
-class MenuItemData {
+class DataItemMenu {
   final String title;
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
 
-  MenuItemData({
+  DataItemMenu({
     required this.title,
     required this.icon,
     required this.color,
@@ -211,7 +207,6 @@ class MenuItemData {
   });
 }
 
-/// Main Menu Page
 class HalamanMenuUtama extends StatefulWidget {
   const HalamanMenuUtama({super.key});
 
@@ -222,15 +217,13 @@ class HalamanMenuUtama extends StatefulWidget {
 class _HalamanMenuUtamaState extends State<HalamanMenuUtama> {
   int _selectedIndex = 0;
 
-  // Define colors for categories
-  static const Color stockColor = Color(0xFF42A5F5); // Blue
-  static const Color salesColor = Color(0xFF66BB6A); // Green
-  static const Color analyticsColor = Color(0xFF7E57C2); // Purple
+  static const Color stockColor = Color(0xFF42A5F5);
+  static const Color salesColor = Color(0xFF66BB6A); 
+  static const Color analyticsColor = Color(0xFF7E57C2); 
 
-  /// Build Manajemen Stok page
-  Widget _buildStokPage() {
+  Widget _buatHalamanStok() {
     final stockItems = [
-      MenuItemData(
+      DataItemMenu(
         title: 'Scan\nFaktur',
         icon: Icons.camera_alt,
         color: stockColor,
@@ -239,7 +232,7 @@ class _HalamanMenuUtamaState extends State<HalamanMenuUtama> {
           MaterialPageRoute(builder: (context) => const RisetMLKitPage()),
         ),
       ),
-      MenuItemData(
+      DataItemMenu(
         title: 'Manajemen\nObat',
         icon: Icons.medical_services,
         color: stockColor,
@@ -248,7 +241,7 @@ class _HalamanMenuUtamaState extends State<HalamanMenuUtama> {
           MaterialPageRoute(builder: (context) => const ManajemenObatPage()),
         ),
       ),
-      MenuItemData(
+      DataItemMenu(
         title: 'Tambah Obat\nManual',
         icon: Icons.add_box,
         color: stockColor,
@@ -263,17 +256,16 @@ class _HalamanMenuUtamaState extends State<HalamanMenuUtama> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildPageHeader('Manajemen Stok', Icons.inventory_2, stockColor),
-          _buildCategoryGrid(stockItems),
+          _buatJudulHalaman('Manajemen Stok', Icons.inventory_2, stockColor),
+          _buatKisiKategori(stockItems),
         ],
       ),
     );
   }
 
-  /// Build Penjualan page
-  Widget _buildPenjualanPage() {
+  Widget _buatHalamanPenjualan() {
     final salesItems = [
-      MenuItemData(
+      DataItemMenu(
         title: 'Penjualan',
         icon: Icons.shopping_cart,
         color: salesColor,
@@ -282,7 +274,7 @@ class _HalamanMenuUtamaState extends State<HalamanMenuUtama> {
           MaterialPageRoute(builder: (context) => const PenjualanPage()),
         ),
       ),
-      MenuItemData(
+      DataItemMenu(
         title: 'Histori\nPenjualan',
         icon: Icons.history,
         color: salesColor,
@@ -297,17 +289,16 @@ class _HalamanMenuUtamaState extends State<HalamanMenuUtama> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildPageHeader('Penjualan', Icons.attach_money, salesColor),
-          _buildCategoryGrid(salesItems),
+          _buatJudulHalaman('Penjualan', Icons.attach_money, salesColor),
+          _buatKisiKategori(salesItems),
         ],
       ),
     );
   }
 
-  /// Build Analisis & Rekomendasi page
-  Widget _buildAnalisisPage() {
+  Widget _buatHalamanAnalisis() {
     final analyticsItems = [
-      MenuItemData(
+      DataItemMenu(
         title: 'Laporan\nKadarluarsa',
         icon: Icons.schedule,
         color: analyticsColor,
@@ -318,7 +309,7 @@ class _HalamanMenuUtamaState extends State<HalamanMenuUtama> {
           ),
         ),
       ),
-      MenuItemData(
+      DataItemMenu(
         title: 'Rekomendasi\nCerdas (AI)',
         icon: Icons.psychology,
         color: analyticsColor,
@@ -327,7 +318,7 @@ class _HalamanMenuUtamaState extends State<HalamanMenuUtama> {
           MaterialPageRoute(builder: (context) => RekomendasiPage()),
         ),
       ),
-      MenuItemData(
+      DataItemMenu(
         title: 'Histori\nRekomendasi',
         icon: Icons.history,
         color: analyticsColor,
@@ -338,7 +329,7 @@ class _HalamanMenuUtamaState extends State<HalamanMenuUtama> {
           ),
         ),
       ),
-      MenuItemData(
+      DataItemMenu(
         title: 'Grafik\nper Bulan',
         icon: Icons.bar_chart,
         color: analyticsColor,
@@ -353,19 +344,18 @@ class _HalamanMenuUtamaState extends State<HalamanMenuUtama> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildPageHeader(
+          _buatJudulHalaman(
             'Analisis & Rekomendasi',
             Icons.analytics,
             analyticsColor,
           ),
-          _buildCategoryGrid(analyticsItems),
+          _buatKisiKategori(analyticsItems),
         ],
       ),
     );
   }
 
-  /// Build page header
-  Widget _buildPageHeader(String title, IconData icon, Color color) {
+  Widget _buatJudulHalaman(String title, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
       decoration: BoxDecoration(
@@ -404,8 +394,7 @@ class _HalamanMenuUtamaState extends State<HalamanMenuUtama> {
     );
   }
 
-  /// Build category grid
-  Widget _buildCategoryGrid(List<MenuItemData> items) {
+  Widget _buatKisiKategori(List<DataItemMenu> items) {
     final crossAxisCount = items.length > 4 ? 3 : 2;
     return GridView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -420,7 +409,7 @@ class _HalamanMenuUtamaState extends State<HalamanMenuUtama> {
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
-        return MenuCard(
+        return KartuMenu(
           title: item.title,
           icon: item.icon,
           backgroundColor: item.color,
@@ -443,9 +432,9 @@ class _HalamanMenuUtamaState extends State<HalamanMenuUtama> {
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-          _buildStokPage(),
-          _buildPenjualanPage(),
-          _buildAnalisisPage(),
+          _buatHalamanStok(),
+          _buatHalamanPenjualan(),
+          _buatHalamanAnalisis(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
