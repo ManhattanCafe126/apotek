@@ -4,7 +4,7 @@ import '../models/penjualan_model.dart';
 
 class LayananPenjualan {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
-  static Future<List<Penjualan>> getPenjualanByMonth(
+  static Future<List<Penjualan>> dapatkanPenjualanPerBulan(
     int month,
     int year,
   ) async {
@@ -22,17 +22,17 @@ class LayananPenjualan {
           .map((doc) => Penjualan.dariMap(doc.id, doc.data()))
           .toList();
     } catch (e) {
-      debugPrint('Error getPenjualanByMonth: $e');
+      debugPrint('Error dapatkanPenjualanPerBulan: $e');
       return [];
     }
   }
 
-  static Future<Map<String, int>> getTotalPenjualanPerObatByMonth(
+  static Future<Map<String, int>> dapatkanTotalPenjualanPerObatPerBulan(
     int month,
     int year,
   ) async {
     try {
-      final penjualanList = await getPenjualanByMonth(month, year);
+      final penjualanList = await dapatkanPenjualanPerBulan(month, year);
       final Map<String, int> result = {};
 
       for (var penjualan in penjualanList) {
@@ -43,21 +43,21 @@ class LayananPenjualan {
 
       return result;
     } catch (e) {
-      debugPrint('Error getTotalPenjualanPerObatByMonth: $e');
+      debugPrint('Error dapatkanTotalPenjualanPerObatPerBulan: $e');
       return {};
     }
   }
 
-  static Future<double> calculateTren(String namaObat) async {
+  static Future<double> hitungTren(String namaObat) async {
     try {
       final now = DateTime.now();
-      final bulanIni = await getTotalPenjualanPerObatByMonth(
+      final bulanIni = await dapatkanTotalPenjualanPerObatPerBulan(
         now.month,
         now.year,
       );
       final bulanLalu = now.month == 1
-          ? await getTotalPenjualanPerObatByMonth(12, now.year - 1)
-          : await getTotalPenjualanPerObatByMonth(now.month - 1, now.year);
+          ? await dapatkanTotalPenjualanPerObatPerBulan(12, now.year - 1)
+          : await dapatkanTotalPenjualanPerObatPerBulan(now.month - 1, now.year);
 
       final jumlahIni = bulanIni[namaObat] ?? 0;
       final jumlahLalu = bulanLalu[namaObat] ?? 0;
@@ -67,12 +67,12 @@ class LayananPenjualan {
       final perubahan = (jumlahIni - jumlahLalu) / jumlahLalu;
       return perubahan.clamp(-1.0, 1.0);
     } catch (e) {
-      debugPrint('Error calculateTren: $e');
+      debugPrint('Error hitungTren: $e');
       return 0.0;
     }
   }
 
-  static Future<int> getStokTerkini(String namaObat) async {
+  static Future<int> dapatkanStokTerkini(String namaObat) async {
     try {
       final snapshot = await _db
           .collection('obat')
@@ -87,12 +87,12 @@ class LayananPenjualan {
 
       return totalStok;
     } catch (e) {
-      debugPrint('Error getStokTerkini: $e');
+      debugPrint('Error dapatkanStokTerkini: $e');
       return 0;
     }
   }
 
-  static Future<List<Map<String, dynamic>>> getDetailStokFEFO(
+  static Future<List<Map<String, dynamic>>> dapatkanDetailStokFEFO(
     String namaObat,
   ) async {
     try {
@@ -112,8 +112,8 @@ class LayananPenjualan {
       }).toList();
 
       stokList.sort((a, b) {
-        final dateA = _parseDate(a['exp_date'] as String);
-        final dateB = _parseDate(b['exp_date'] as String);
+        final dateA = _parsirTanggal(a['exp_date'] as String);
+        final dateB = _parsirTanggal(b['exp_date'] as String);
         if (dateA == null && dateB == null) return 0;
         if (dateA == null) return 1;
         if (dateB == null) return -1;
@@ -122,12 +122,12 @@ class LayananPenjualan {
 
       return stokList;
     } catch (e) {
-      debugPrint('Error getDetailStokFEFO: $e');
+      debugPrint('Error dapatkanDetailStokFEFO: $e');
       return [];
     }
   }
 
-  static DateTime? _parseDate(String dateStr) {
+  static DateTime? _parsirTanggal(String dateStr) {
     try {
       final parts = dateStr.split('/');
       if (parts.length == 3) {
@@ -143,32 +143,32 @@ class LayananPenjualan {
     return null;
   }
 
-  static Future<AnalisisTren> analyzeObat(String namaObat) async {
+  static Future<AnalisisTren> analisisObat(String namaObat) async {
     try {
       final now = DateTime.now();
 
       final penjualanBulanIni =
-          (await getTotalPenjualanPerObatByMonth(
+          (await dapatkanTotalPenjualanPerObatPerBulan(
             now.month,
             now.year,
           ))[namaObat] ??
           0;
 
       final penjualanBulanLalu = now.month == 1
-          ? (await getTotalPenjualanPerObatByMonth(
+          ? (await dapatkanTotalPenjualanPerObatPerBulan(
                   12,
                   now.year - 1,
                 ))[namaObat] ??
                 0
-          : (await getTotalPenjualanPerObatByMonth(
+          : (await dapatkanTotalPenjualanPerObatPerBulan(
                   now.month - 1,
                   now.year,
                 ))[namaObat] ??
                 0;
 
-      final tren = await calculateTren(namaObat);
-      final stokTerkini = await getStokTerkini(namaObat);
-      final detailStok = await getDetailStokFEFO(namaObat);
+      final tren = await hitungTren(namaObat);
+      final stokTerkini = await dapatkanStokTerkini(namaObat);
+      final detailStok = await dapatkanDetailStokFEFO(namaObat);
 
       return AnalisisTren(
         namaObat: namaObat,
@@ -179,7 +179,7 @@ class LayananPenjualan {
         stokDetail: detailStok,
       );
     } catch (e) {
-      debugPrint('Error analyzeObat: $e');
+      debugPrint('Error analisisObat: $e');
       return AnalisisTren(
         namaObat: namaObat,
         tren: 0.0,
@@ -191,7 +191,7 @@ class LayananPenjualan {
     }
   }
 
-  static Future<List<String>> getAllObatNames() async {
+  static Future<List<String>> dapatkanSemuaNamaObat() async {
     try {
       final penjualanSnapshot = await _db.collection('penjualan').get();
       final Set<String> obatNames = {};
@@ -206,7 +206,7 @@ class LayananPenjualan {
 
       return obatNames.toList()..sort();
     } catch (e) {
-      debugPrint('Error getAllObatNames: $e');
+      debugPrint('Error dapatkanSemuaNamaObat: $e');
       return [];
     }
   }

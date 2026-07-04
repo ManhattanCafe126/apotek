@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/rekomendasi_model.dart';
-import '../models/drug_model.dart';
+import '../models/model_obat.dart';
 import '../models/penjualan_model.dart';
 
 class LayananFirestore {
