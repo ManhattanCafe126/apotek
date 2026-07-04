@@ -1,12 +1,12 @@
-class DrugData {
+class DataObat {
   final String nama;
   final String batch;
-  final String expDate; 
+  final String expDate; // Format: DD/MM/YYYY
   final double harga;
   final int jumlahStok;
-  final String barcode; 
+  final String barcode; // Barcode obat
 
-  DrugData({
+  DataObat({
     required this.nama,
     required this.batch,
     required this.expDate,
@@ -15,8 +15,8 @@ class DrugData {
     this.barcode = '',
   });
 
-  factory DrugData.fromJson(Map<String, dynamic> json) {
-    return DrugData(
+  factory DataObat.dariJson(Map<String, dynamic> json) {
+    return DataObat(
       nama: json['nama']?.toString() ?? '',
       batch: json['batch']?.toString() ?? '',
       expDate: json['exp_date']?.toString() ?? '',
@@ -26,7 +26,7 @@ class DrugData {
     );
   }
 
-  Map<String, dynamic> toMap() => {
+  Map<String, dynamic> keMap() => {
     'nama': nama,
     'batch': batch,
     'exp_date': expDate,
@@ -37,5 +37,5 @@ class DrugData {
 
   @override
   String toString() =>
-      'DrugData(nama: $nama, batch: $batch, exp: $expDate, harga: $harga, stok: $jumlahStok, barcode: $barcode)';
+      'DataObat(nama: $nama, batch: $batch, exp: $expDate, harga: $harga, stok: $jumlahStok, barcode: $barcode)';
 }

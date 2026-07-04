@@ -1,14 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
-class SalesItem {
+class ItemPenjualan {
   final String drugId;
   final String nama;
   final String batch;
   final double harga;
   final int jumlah;
 
-  SalesItem({
+  ItemPenjualan({
     required this.drugId,
     required this.nama,
     required this.batch,
@@ -18,7 +18,7 @@ class SalesItem {
 
   double get subtotal => harga * jumlah;
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> keMap() {
     return {
       'drugId': drugId,
       'nama': nama,
@@ -28,8 +28,8 @@ class SalesItem {
     };
   }
 
-  factory SalesItem.fromMap(Map<String, dynamic> map) {
-    return SalesItem(
+  factory ItemPenjualan.dariMap(Map<String, dynamic> map) {
+    return ItemPenjualan(
       drugId: map['drugId'] ?? '',
       nama: map['nama'] ?? '',
       batch: map['batch'] ?? '',
@@ -41,7 +41,7 @@ class SalesItem {
 
 class Penjualan {
   final String id;
-  final List<SalesItem> items;
+  final List<ItemPenjualan> items;
   final Timestamp createdAt;
 
   Penjualan({required this.id, required this.items, required this.createdAt});
@@ -50,18 +50,18 @@ class Penjualan {
     return items.fold(0, (sum, item) => sum + item.subtotal);
   }
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> keMap() {
     return {
-      'items': items.map((item) => item.toMap()).toList(),
+      'items': items.map((item) => item.keMap()).toList(),
       'total': total,
       'createdAt': createdAt,
     };
   }
 
-  factory Penjualan.fromMap(String id, Map<String, dynamic> map) {
+  factory Penjualan.dariMap(String id, Map<String, dynamic> map) {
     final itemsList = (map['items'] as List?) ?? [];
     final items = itemsList
-        .map((item) => SalesItem.fromMap(item as Map<String, dynamic>))
+        .map((item) => ItemPenjualan.dariMap(item as Map<String, dynamic>))
         .toList();
 
     return Penjualan(
@@ -89,7 +89,7 @@ class AnalisisTren {
     required this.stokDetail,
   });
 
-  String getTrenLabel() {
+  String dapatkanLabelTren() {
     if (tren > 0.2) return 'Naik Drastis';
     if (tren > 0) return 'Naik';
     if (tren < -0.2) return 'Turun Drastis';
@@ -97,7 +97,7 @@ class AnalisisTren {
     return 'Stabil';
   }
 
-  DateTime? _parseExpDate(String dateStr) {
+  DateTime? _parsirTanggalExp(String dateStr) {
     try {
       final parts = dateStr.split('/');
       if (parts.length == 3) {
@@ -113,26 +113,26 @@ class AnalisisTren {
     return null;
   }
 
-  int? _daysUntilExpiry(String expDateStr) {
-    final expDate = _parseExpDate(expDateStr);
+  int? _hariHinggaKadaluarsa(String expDateStr) {
+    final expDate = _parsirTanggalExp(expDateStr);
     if (expDate == null) return null;
     return expDate.difference(DateTime.now()).inDays;
   }
 
-  List<Map<String, dynamic>> getStokFEFO() {
+  List<Map<String, dynamic>> dapatkanStokFEFO() {
     final sorted = List<Map<String, dynamic>>.from(stokDetail);
     sorted.sort((a, b) {
-      final daysA = _daysUntilExpiry(a['exp_date'] ?? '') ?? 999999;
-      final daysB = _daysUntilExpiry(b['exp_date'] ?? '') ?? 999999;
+      final daysA = _hariHinggaKadaluarsa(a['exp_date'] ?? '') ?? 999999;
+      final daysB = _hariHinggaKadaluarsa(b['exp_date'] ?? '') ?? 999999;
       return daysA.compareTo(daysB);
     });
     return sorted;
   }
 
-  String getRekomendasi() {
-    final stokFEFO = getStokFEFO();
+  String dapatkanRekomendasi() {
+    final stokFEFO = dapatkanStokFEFO();
     final stokUrgent = stokFEFO
-        .where((s) => (_daysUntilExpiry(s['exp_date'] ?? '') ?? 999999) <= 30)
+        .where((s) => (_hariHinggaKadaluarsa(s['exp_date'] ?? '') ?? 999999) <= 30)
         .toList();
 
     if (stokUrgent.isNotEmpty) {
@@ -157,12 +157,12 @@ class AnalisisTren {
     return 'Monitor - Kondisi normal';
   }
 
-  Map<String, dynamic> toMap() => {
+  Map<String, dynamic> keMap() => {
     'nama_obat': namaObat,
     'tren': tren,
     'penjualan_bulan_ini': totalPenjualanBulanIni,
     'penjualan_bulan_lalu': totalPenjualanBulanLalu,
     'stok_terkini': stokTerkini,
-    'rekomendasi': getRekomendasi(),
+    'rekomendasi': dapatkanRekomendasi(),
   };
 }

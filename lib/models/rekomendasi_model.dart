@@ -1,18 +1,18 @@
-class RestockItem {
+class ItemRestok {
   final String nama;
   final String saran;
   final int jumlah;
   final String alasan;
 
-  RestockItem({
+  ItemRestok({
     required this.nama,
     required this.saran,
     required this.jumlah,
     required this.alasan,
   });
 
-  factory RestockItem.fromJson(Map<String, dynamic> json) {
-    return RestockItem(
+  factory ItemRestok.dariJson(Map<String, dynamic> json) {
+    return ItemRestok(
       nama: json['nama']?.toString() ?? '',
       saran: json['saran']?.toString() ?? '',
       jumlah: int.tryParse(json['jumlah']?.toString() ?? '0') ?? 0,
@@ -20,7 +20,7 @@ class RestockItem {
     );
   }
 
-  Map<String, dynamic> toMap() => {
+  Map<String, dynamic> keMap() => {
     'nama': nama,
     'saran': saran,
     'jumlah': jumlah,
@@ -28,23 +28,23 @@ class RestockItem {
   };
 }
 
-class TidakRestockItem {
+class ItemTidakRestok {
   final String nama;
   final String alasan;
 
-  TidakRestockItem({
+  ItemTidakRestok({
     required this.nama,
     required this.alasan,
   });
 
-  factory TidakRestockItem.fromJson(Map<String, dynamic> json) {
-    return TidakRestockItem(
+  factory ItemTidakRestok.dariJson(Map<String, dynamic> json) {
+    return ItemTidakRestok(
       nama: json['nama']?.toString() ?? '',
       alasan: json['alasan']?.toString() ?? '',
     );
   }
 
-  Map<String, dynamic> toMap() => {
+  Map<String, dynamic> keMap() => {
     'nama': nama,
     'alasan': alasan,
   };
