@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'models/drug_model.dart';
 import 'tambah_obat_page.dart';
 import 'services/firestore_service.dart';
@@ -15,7 +16,7 @@ class TampilanValidasiData extends StatefulWidget {
 class _TampilanValidasiDataState extends State<TampilanValidasiData> {
   late List<ModelObat> dataObatHasilEkstraksi;
   late Map<int, bool> _selectedItems;
-  final Set<int> _alreadySavedIndices = {};
+  int _savedViaCheckboxCount = 0; // Track obat yang disimpan via checkbox
 
   @override
   void initState() {
@@ -63,8 +64,170 @@ class _TampilanValidasiDataState extends State<TampilanValidasiData> {
     return invalid;
   }
 
+  void ubahDetailData(int index, ModelObat updatedDrug) {
+    setState(() {
+      dataObatHasilEkstraksi[index] = updatedDrug;
+    });
+  }
+
+  /// Hapus item yang dipilih dari daftar (dengan opsi hapus dari DB)
+  void _hapusTerpilih() {
+    if (_checkedCount == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pilih item yang ingin dihapus'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Hapus Item Terpilih'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Yakin ingin menghapus $_checkedCount item?'),
+            const SizedBox(height: 16),
+            const Text(
+              'Pilih aksi:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Batal'),
+          ),
+          OutlinedButton.icon(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              _executeDelete(deleteFromDb: false);
+            },
+            icon: const Icon(Icons.remove_red_eye, size: 18),
+            label: const Text('Hapus dari Daftar Saja'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.orange,
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              _executeDelete(deleteFromDb: true);
+            },
+            icon: const Icon(Icons.delete_forever, size: 18),
+            label: const Text('Hapus dari DB'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _executeDelete({required bool deleteFromDb}) async {
+    final countToRemove = _checkedCount;
+    final drugsToDelete = <ModelObat>[];
+    final indicesToRemove = <int>[];
+
+    for (int i = 0; i < dataObatHasilEkstraksi.length; i++) {
+      if (_selectedItems[i] == true) {
+        drugsToDelete.add(dataObatHasilEkstraksi[i]);
+        indicesToRemove.add(i);
+      }
+    }
+
+    if (deleteFromDb) {
+      // Hapus dari Firestore juga
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Menghapus dari database...'),
+            ],
+          ),
+        ),
+      );
+
+      try {
+        final db = FirebaseFirestore.instance;
+        for (final drug in drugsToDelete) {
+          // Cari dan hapus dari Firestore berdasarkan nama dan batch
+          final snapshot = await db
+              .collection('obat')
+              .where('nama', isEqualTo: drug.namaObat)
+              .where('batch', isEqualTo: drug.batch)
+              .get();
+
+          for (final doc in snapshot.docs) {
+            await doc.reference.delete();
+          }
+        }
+
+        if (mounted) Navigator.of(context).pop();
+      } catch (e) {
+        if (mounted) Navigator.of(context).pop();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error hapus dari DB: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    setState(() {
+      // Hapus dari daftar (dari belakang ke depan agar index tidak bergeser)
+      indicesToRemove.sort((a, b) => b.compareTo(a));
+      for (final index in indicesToRemove) {
+        dataObatHasilEkstraksi.removeAt(index);
+        _selectedItems.remove(index);
+      }
+
+      // Reset checkbox
+      _selectedItems = {};
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          deleteFromDb
+              ? '$countToRemove item dihapus dari daftar dan database'
+              : '$countToRemove item dihapus dari daftar',
+        ),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  /// Track item yang sedang dalam proses edit batch
+  List<int> _batchEditQueue = [];
+
   void tampilkanDataValidasi(int index) {
     if (index >= dataObatHasilEkstraksi.length) return;
+
+    // Jika sedang dalam mode edit batch, simpan queue saat ini
+    final isBatchEdit = _batchEditQueue.contains(index);
 
     final drug = dataObatHasilEkstraksi[index];
 
@@ -77,28 +240,82 @@ class _TampilanValidasiDataState extends State<TampilanValidasiData> {
       if (!mounted) return;
 
       if (result == true) {
+        // Hapus obat dari daftar preview karena sudah tersimpan
         setState(() {
-          _selectedItems[index] = true;
-          _alreadySavedIndices.add(index);
+          dataObatHasilEkstraksi.removeAt(index);
+          _selectedItems.remove(index);
+          _batchEditQueue.remove(index);
+
+          // Update index di _batchEditQueue (karena list sudah berubah)
+          _batchEditQueue = _batchEditQueue.map((i) => i > index ? i - 1 : i).toList();
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${drug.namaObat} tersimpan - otomatis diceklis'),
-            duration: const Duration(seconds: 2),
+            content: Text('${drug.namaObat} tersimpan & dihapus dari daftar'),
+            duration: const Duration(seconds: 1),
             backgroundColor: Colors.green,
           ),
         );
+
+        // Jika dalam mode batch edit, lanjut ke item berikutnya
+        if (isBatchEdit && _batchEditQueue.isNotEmpty) {
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted && _batchEditQueue.isNotEmpty) {
+              tampilkanDataValidasi(_batchEditQueue.first);
+            }
+          });
+        }
       } else if (result is ModelObat) {
         ubahDetailData(index, result);
       }
     });
   }
 
-  void ubahDetailData(int index, ModelObat updatedDrug) {
-    setState(() {
-      dataObatHasilEkstraksi[index] = updatedDrug;
-    });
+  /// Edit semua item yang dipilih satu per satu
+  void _editTerpilih() {
+    if (_checkedCount == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pilih item yang ingin diedit'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Ambil semua index yang dipilih
+    final selectedToEdit = <int>[];
+    for (int i = 0; i < _selectedItems.length; i++) {
+      if (_selectedItems[i] == true) {
+        selectedToEdit.add(i);
+      }
+    }
+
+    if (selectedToEdit.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tidak ada item untuk diedit'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Set queue untuk batch edit
+    _batchEditQueue = selectedToEdit;
+
+    // Tampilkan snackbar info
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Akan mengedit ${selectedToEdit.length} item satu per satu'),
+        backgroundColor: Colors.blue,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    // Mulai dengan item pertama
+    tampilkanDataValidasi(selectedToEdit.first);
   }
 
   Future<void> kliSimpanKeFirestore() async {
@@ -114,17 +331,11 @@ class _TampilanValidasiDataState extends State<TampilanValidasiData> {
 
     final invalidDrugs = <ModelObat>[];
     final validDrugs = <ModelObat>[];
-    final alreadySavedCount = <int>[];
 
-    for (int i = 0; i < widget.drugs.length; i++) {
+    for (int i = 0; i < dataObatHasilEkstraksi.length; i++) {
       if (_selectedItems[i] != true) continue;
 
-      if (_alreadySavedIndices.contains(i)) {
-        alreadySavedCount.add(i);
-        continue;
-      }
-
-      final drug = widget.drugs[i];
+      final drug = dataObatHasilEkstraksi[i];
       if (_isDrugValid(drug)) {
         validDrugs.add(drug);
       } else {
@@ -133,14 +344,9 @@ class _TampilanValidasiDataState extends State<TampilanValidasiData> {
     }
 
     if (validDrugs.isEmpty && invalidDrugs.isEmpty) {
-      final savedViaForm = alreadySavedCount.length;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            savedViaForm > 0
-                ? '$savedViaForm obat sudah tersimpan via form'
-                : 'Pilih obat yang ingin disimpan',
-          ),
+        const SnackBar(
+          content: Text('Pilih obat yang ingin disimpan'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -166,27 +372,7 @@ class _TampilanValidasiDataState extends State<TampilanValidasiData> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (alreadySavedCount.isNotEmpty) ...[
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.check_circle, color: Colors.green, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${alreadySavedCount.length} obat sudah tersimpan',
-                          style: const TextStyle(color: Colors.green),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                const Text('Obat berikut belum lengkap:'),
+                Text('Obat berikut belum lengkap:'),
                 const SizedBox(height: 8),
                 Text(
                   invalidNames,
@@ -240,39 +426,8 @@ class _TampilanValidasiDataState extends State<TampilanValidasiData> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Konfirmasi Penyimpanan'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (alreadySavedCount.isNotEmpty) ...[
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.check_circle, color: Colors.green, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '${alreadySavedCount.length} obat sudah tersimpan via form',
-                        style: const TextStyle(color: Colors.green, fontSize: 13),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
-            Text(
-              'Akan disimpan sekarang: ${validDrugs.length} obat',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            const Text('Pastikan semua data sudah benar.'),
-          ],
+        content: Text(
+          'Akan disimpan: ${validDrugs.length} obat\n\nPastikan semua data sudah benar.',
         ),
         actions: [
           TextButton(
@@ -322,19 +477,30 @@ class _TampilanValidasiDataState extends State<TampilanValidasiData> {
 
       if (mounted) Navigator.of(context).pop();
 
-      if (mounted) {
-        final totalSaved = saved + alreadySavedCount.length;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              totalSaved > 0
-                  ? 'Total tersimpan: $totalSaved obat'
-                  : 'Tidak ada obat yang disimpan',
+      // Update counter untuk obat yang disimpan via checkbox
+      _savedViaCheckboxCount += saved;
+
+      if (_savedViaCheckboxCount >= 1) {
+        // Ada obat tersimpan, kembali ke halaman utama
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Total $_savedViaCheckboxCount obat tersimpan'),
+              backgroundColor: Colors.green,
             ),
-            backgroundColor: totalSaved > 0 ? Colors.green : Colors.orange,
-          ),
-        );
-        Navigator.pop(context, true);
+          );
+          Navigator.pop(context, true); // Kembali ke halaman utama
+        }
+      } else {
+        // Tidak ada yang tersimpan
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Pilih minimal 1 obat untuk disimpan'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) Navigator.of(context).pop();
@@ -361,18 +527,18 @@ class _TampilanValidasiDataState extends State<TampilanValidasiData> {
         actions: [
           TextButton.icon(
             onPressed: () {
-              final allSelected = _checkedCount == widget.drugs.length;
+              final allSelected = _checkedCount == dataObatHasilEkstraksi.length;
               _toggleSelectAll(!allSelected);
             },
             icon: Icon(
-              _checkedCount == widget.drugs.length
+              _checkedCount == dataObatHasilEkstraksi.length
                   ? Icons.check_box
                   : Icons.check_box_outline_blank,
               color: Colors.white,
               size: 20,
             ),
             label: Text(
-              _checkedCount == widget.drugs.length ? 'Uncheck All' : 'Check All',
+              _checkedCount == dataObatHasilEkstraksi.length ? 'Uncheck All' : 'Check All',
               style: const TextStyle(color: Colors.white, fontSize: 13),
             ),
           ),
@@ -390,7 +556,7 @@ class _TampilanValidasiDataState extends State<TampilanValidasiData> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Total: ${widget.drugs.length}',
+                      'Total: ${dataObatHasilEkstraksi.length}',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -416,7 +582,7 @@ class _TampilanValidasiDataState extends State<TampilanValidasiData> {
                 ),
                 const SizedBox(height: 8),
                 LinearProgressIndicator(
-                  value: widget.drugs.isEmpty ? 1 : _checkedCount / widget.drugs.length,
+                  value: dataObatHasilEkstraksi.isEmpty ? 1 : _checkedCount / dataObatHasilEkstraksi.length,
                   minHeight: 6,
                   backgroundColor: Colors.grey[300],
                   valueColor: const AlwaysStoppedAnimation(Colors.green),
@@ -432,21 +598,16 @@ class _TampilanValidasiDataState extends State<TampilanValidasiData> {
                 final drug = dataObatHasilEkstraksi[index];
                 final isChecked = _selectedItems[index] ?? false;
                 final isValid = _isDrugValid(drug);
-                final alreadySaved = _alreadySavedIndices.contains(index);
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 10),
                   elevation: 2,
-                  color: alreadySaved
-                      ? Colors.green.shade100
-                      : (isChecked ? Colors.green.shade50 : Colors.white),
+                  color: isChecked ? Colors.green.shade50 : Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                     side: BorderSide(
-                      color: alreadySaved
-                          ? Colors.green
-                          : (isChecked ? Colors.green : Colors.grey.shade300),
-                      width: alreadySaved ? 3 : (isChecked ? 2 : 1),
+                      color: isChecked ? Colors.green : Colors.grey.shade300,
+                      width: isChecked ? 2 : 1,
                     ),
                   ),
                   child: InkWell(
@@ -461,9 +622,7 @@ class _TampilanValidasiDataState extends State<TampilanValidasiData> {
                             height: 40,
                             child: Checkbox(
                               value: isChecked,
-                              onChanged: alreadySaved
-                                  ? null
-                                  : (value) => _toggleItem(index, value ?? false),
+                              onChanged: (value) => _toggleItem(index, value ?? false),
                               activeColor: Colors.green,
                               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
@@ -472,22 +631,18 @@ class _TampilanValidasiDataState extends State<TampilanValidasiData> {
                             width: 28,
                             height: 28,
                             decoration: BoxDecoration(
-                              color: alreadySaved
-                                  ? Colors.green.shade700
-                                  : (isChecked ? Colors.green : Colors.grey.shade400),
+                              color: isChecked ? Colors.green : Colors.grey.shade400,
                               shape: BoxShape.circle,
                             ),
                             child: Center(
-                              child: alreadySaved
-                                  ? const Icon(Icons.check, color: Colors.white, size: 16)
-                                  : Text(
-                                      '${index + 1}',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12,
-                                      ),
-                                    ),
+                              child: Text(
+                                '${index + 1}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -509,30 +664,7 @@ class _TampilanValidasiDataState extends State<TampilanValidasiData> {
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
-                                    if (alreadySaved)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: Colors.green.shade700,
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                        child: const Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(Icons.check, color: Colors.white, size: 12),
-                                            SizedBox(width: 2),
-                                            Text(
-                                              'Tersimpan',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 10,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      )
-                                    else if (!isValid)
+                                    if (!isValid)
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                         decoration: BoxDecoration(
@@ -631,12 +763,44 @@ class _TampilanValidasiDataState extends State<TampilanValidasiData> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildSummaryItem('Total', '${widget.drugs.length}', Colors.deepPurple),
+                      _buildSummaryItem('Sisa', '${dataObatHasilEkstraksi.length}', Colors.deepPurple),
                       _buildSummaryItem('Dipilih', '$_checkedCount', Colors.green),
-                      _buildSummaryItem('Belum', '${widget.drugs.length - _checkedCount}', Colors.grey),
+                      _buildSummaryItem('Selesai', '$_savedViaCheckboxCount', Colors.blue),
                     ],
                   ),
                   const SizedBox(height: 12),
+
+                  // Baris aksi batch (Hapus & Edit Terpilih)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _checkedCount > 0 ? _hapusTerpilih : null,
+                          icon: const Icon(Icons.delete, size: 18),
+                          label: const Text('Hapus Terpilih'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _checkedCount > 0 ? _editTerpilih : null,
+                          icon: const Icon(Icons.edit, size: 18),
+                          label: const Text('Edit Terpilih'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.blue,
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Baris tombol utama
                   Row(
                     children: [
                       Expanded(
@@ -654,14 +818,22 @@ class _TampilanValidasiDataState extends State<TampilanValidasiData> {
                       Expanded(
                         flex: 2,
                         child: ElevatedButton.icon(
-                          onPressed: _checkedCount > 0 ? kliSimpanKeFirestore : null,
-                          icon: const Icon(Icons.save),
+                          onPressed: (_savedViaCheckboxCount >= 1 || dataObatHasilEkstraksi.isEmpty)
+                              ? () {
+                                  Navigator.pop(context, true);
+                                }
+                              : null,
+                          icon: const Icon(Icons.home),
                           label: Text(
-                            _checkedCount > 0 ? 'Simpan ($_checkedCount)' : 'Pilih Obat Dulu',
+                            _savedViaCheckboxCount >= 1
+                                ? 'Kembali ke Utama'
+                                : (dataObatHasilEkstraksi.isEmpty ? 'Semua Selesai' : 'Simpan Obat Dulu'),
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: _checkedCount > 0 ? Colors.green : Colors.grey,
+                            backgroundColor: (_savedViaCheckboxCount >= 1 || dataObatHasilEkstraksi.isEmpty)
+                                ? Colors.deepPurple
+                                : Colors.grey,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
